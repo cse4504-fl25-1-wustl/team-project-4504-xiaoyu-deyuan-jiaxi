@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Shipment {
-    private List<CrateOrPallet> crateOrPallets;
+    private List<CrateOrPallet> cratesOrPallets;
     private double totalWeight;
 
     public Shipment() {
@@ -12,16 +12,12 @@ public class Shipment {
         this.totalWeight = 0;
     }
 
-    public void addContainer(CrateOrPallet crateOrPallet) {
-        crateOrPallet.add(crateOrPallet);
+    public void addCrateOrPallet(CrateOrPallet crateOrPallet) {
+        cratesOrPallets.add(crateOrPallet);
         totalWeight += crateOrPallet.getTotalWeight();
     }
 
-    public List<CrateOrPallet> getContainers() 
-    { 
-        return new ArrayList<>(cratesOrPallets) 
-    }
-    public double getTotalWeight() { 
-        return totalWeight; 
-    }
+    // Getters
+    public List<CrateOrPallet> getCratesOrPallets() { return new ArrayList<>(cratesOrPallets); }
+    public double getTotalWeight() { return totalWeight; }
 }
