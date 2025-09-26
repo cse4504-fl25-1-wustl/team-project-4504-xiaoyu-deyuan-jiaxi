@@ -31,7 +31,7 @@ public class ShipmentService {
             List<Box> boxes = packingService.packItemsIntoBoxes(items);
 
             // Pack boxes into crates/pallets
-            List<CrateOrPallet> containers = packingService.packBoxesIntoCrates(boxes);
+            List<CrateOrPallet> containers = packingService.packBoxIntoCrates(boxes);
 
             // Create shipment
             Shipment shipment = new Shipment();
