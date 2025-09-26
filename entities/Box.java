@@ -37,9 +37,14 @@ public class Box {
         //check the rules
         return true;
     }
-    
-
-
-    
+    public boolean tryAddArt(Art art) {
+        //try to add art into the box
+        return true;
+    }
+    public boolean remove(Art art) {
+        //empty the box
+        return true;
+    }   
+ 
 
 }

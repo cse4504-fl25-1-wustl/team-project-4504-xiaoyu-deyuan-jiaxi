@@ -4,13 +4,15 @@ public class Art {
     private int height;
     private int width;
     private int length;
+    private boolean inBox;
 
-    public Art(String id, float weight, int height, int width, int length) {
+    public Art(String id, float weight, int height, int width, int length, boolean inBox) {
         this.id = id;
         this.weight = weight;
         this.height = height;
         this.width = width;
         this.length = length;
+        this.inBox = inBox;
     }
 
     public String getId() {
@@ -53,6 +55,11 @@ public class Art {
         return true;
     }
     public boolean specialHandle() {
+        //check the rules
+        return true;
+    }   
+
+    public boolean isInBox() {
         //check the rules
         return true;
     }   

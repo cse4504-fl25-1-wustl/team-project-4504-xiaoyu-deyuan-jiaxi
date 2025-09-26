@@ -39,4 +39,13 @@ public class Container {
         return 0;
     }
 
+    public boolean tryAddBox(Box box) {
+        //try to add box into the container
+        return true;
+    }
+    public boolean remove(Box box) {
+        //empty the container
+        return true;
+    }
+
 }

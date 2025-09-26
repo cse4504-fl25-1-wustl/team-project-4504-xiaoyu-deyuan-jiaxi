@@ -18,5 +18,15 @@ public class Packer {
     public List<Container> getContainersUsed() {
         return containersUsed;
     }
+    public void packBox() {
+        // Box packing logic to be implemented
+    }
+    public void packContainer() {
+        // Container packing logic to be implemented
+    }
+    public void optimizePacking() {
+        // Optimization logic to be implemented
+    }
+                  
 
 }
