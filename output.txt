@@ -1,0 +1,13 @@
+Shipment Report
+====================
+Crate/Pallet C1: 
+  Total Weight: 0.0 kg
+  Height: 0.0 m
+   Box Box-1 weight: 0.0 kg
+    Items: 
+   Box Box-2 weight: 0.0 kg
+    Items: 
+   Box Box-3 weight: 0.0 kg
+    Items: 
+
+Shipment Total Weight: 0.0 kg
