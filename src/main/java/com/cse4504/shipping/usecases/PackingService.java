@@ -16,7 +16,7 @@ public class PackingService {
     public List<Box> packItemsIntoBoxes(List<Item> items) {
         List<Box> boxes = new ArrayList<>();
         int boxCount = 1;
-        
+
         for (Item item : items) {
             boolean itemPacked = false;
             for (Box box : boxes) {
@@ -32,15 +32,30 @@ public class PackingService {
                 boxes.add(newBox);
             }
         }
-        
+
         return boxes;
     }
+
+    public List<CrateOrPallet> packBoxesIntoCrates(List<Box> boxes) {
+        List<CrateOrPallet> containers = new ArrayList<>();
+        // create a CrateOrPallet，assume max_weight and max_height are big
+        CrateOrPallet crate = new CrateOrPallet("C1", CrateOrPallet.Type.CRATE, 1000.0, 10.0);
+
+        for (Box box : boxes) {
+            crate.addBox(box);
+        }
+        containers.add(crate);
+
+        return containers;
+    }
+
+
 
     public List<CrateOrPallet> packBoxIntoCrates(List<Box> boxes) {
         List<CrateOrPallet> containers = new ArrayList<>();
         int crateCounter = 1;
         int palletCounter = 1;
-        
+
         for (Box box : boxes) {
             boolean boxPacked = false;
             for (CrateOrPallet container : containers) {
@@ -52,14 +67,14 @@ public class PackingService {
             }
             if (!boxPacked) {
                 // Decide whether to use crate or pallet based on box weight
-                CrateOrPallet.Type type = box.getTotalWeight() > 50.0 ? 
-                    CrateOrPallet.Type.PALLET : CrateOrPallet.Type.CRATE;
-                
-                double maxWeight = type == CrateOrPallet.Type.PALLET ? 
-                    DEFAULT_PALLET_MAX_WEIGHT : DEFAULT_CRATE_MAX_WEIGHT;
+                CrateOrPallet.Type type = box.getTotalWeight() > 50.0 ?
+                        CrateOrPallet.Type.PALLET : CrateOrPallet.Type.CRATE;
 
-                String id = type == CrateOrPallet.Type.PALLET ? 
-                    "PALLET-" + palletCounter++ : "CRATE-" + crateCounter++;
+                double maxWeight = type == CrateOrPallet.Type.PALLET ?
+                        DEFAULT_PALLET_MAX_WEIGHT : DEFAULT_CRATE_MAX_WEIGHT;
+
+                String id = type == CrateOrPallet.Type.PALLET ?
+                        "PALLET-" + palletCounter++ : "CRATE-" + crateCounter++;
 
                 CrateOrPallet newContainer = new CrateOrPallet(id, type, maxWeight, 2.4);
                 newContainer.addBox(box);
@@ -69,6 +84,6 @@ public class PackingService {
 
         return containers;
     }
-    
-    
+
+
 }

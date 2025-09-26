@@ -40,7 +40,7 @@ public class ShipmentService {
             }
 
             // Write output
-            outputWriter.writeOutput(shipment);
+            outputWriter.writeOutput("output.txt",shipment);
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to prepare shipment: " + e.getMessage(), e);
