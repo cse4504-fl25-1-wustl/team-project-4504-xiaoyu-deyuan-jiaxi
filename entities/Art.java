@@ -1,3 +1,5 @@
+package entities;
+
 public class Art {
     private String id;
     private float weight;

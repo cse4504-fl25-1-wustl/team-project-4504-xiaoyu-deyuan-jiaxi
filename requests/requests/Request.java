@@ -1,11 +1,13 @@
+package requests;
 
+import entities.Art;
 import java.util.List;
 
-public class request {
+public class Request {
     private List<Art> artsToPack;
     private boolean acceptCrate;
 
-    public request(List<Art> artsToPack, boolean acceptCrate) {
+    public Request(List<Art> artsToPack, boolean acceptCrate) {
         this.artsToPack = artsToPack;
         this.acceptCrate = acceptCrate;
     }

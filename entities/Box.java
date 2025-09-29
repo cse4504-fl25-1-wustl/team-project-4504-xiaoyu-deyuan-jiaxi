@@ -1,3 +1,5 @@
+package entities;
+
 
 import java.util.List;
 
@@ -9,12 +11,17 @@ public class Box {
     private float weight;
     private List<Art> artsInBox;
 
-    public Box(int width, int height, int length, float weight, List<Art> artsInBox) {
+    public Box(String id, int width, int height, int length, float weight, List<Art> artsInBox) {
+    	this.id = id;
         this.width = width;
         this.height = height;
         this.length = length;
         this.weight = weight;
         this.artsInBox = artsInBox;
+    }
+    
+    public String getId() {
+        return id;
     }
 
     public int getWidth() {
@@ -41,8 +48,9 @@ public class Box {
         //try to add art into the box
         return true;
     }
-    public boolean remove(Art art) {
-        //empty the box
+    public boolean remove(Art art)
+    {
+        //remove a specific art from the box
         return true;
     }   
  
