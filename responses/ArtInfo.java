@@ -1,4 +1,4 @@
-
+package responses;
 
 public class ArtInfo {
     private String id;
