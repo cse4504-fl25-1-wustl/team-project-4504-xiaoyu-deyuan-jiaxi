@@ -17,7 +17,7 @@ Make sure you are in the project root directory (`team-project-4504-xiaoyu-deyua
 **Windows (CMD):**
 
 ```bat
-javac ArtPackerCli.java parser\*.java entities\*.java interactor\*.java requests\*.java responses\*.java
+javac -d bin ArtPackerCli.java parser\*.java entities\*.java interactor\*.java requests\*.java responses\*.java
 ```
 
 **Windows (PowerShell):**
