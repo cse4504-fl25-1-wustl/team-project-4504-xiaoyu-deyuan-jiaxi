@@ -17,11 +17,23 @@ public class BoxInfo {
         return id;
     }
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public List<String> getItemIds() {
         return itemIds;
     }
 
+    public void setItemIds(List<String> itemIds) {
+        this.itemIds = itemIds;
+    }
+
     public float getWeight() {
         return weight;
+    }
+
+    public void setWeight(float weight) {
+        this.weight = weight;
     }
 }

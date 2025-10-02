@@ -1,4 +1,3 @@
-package responses;
 
 import java.util.List;
 
@@ -30,5 +29,22 @@ public class Response
 
     public float getTotalWeight() {
         return totalWeight;
+    }
+
+
+    public void setArts(List<ArtInfo> arts) {
+        this.arts = arts;
+    }
+
+    public void setBoxes(List<BoxInfo> boxes) {
+        this.boxes = boxes;
+    }
+
+    public void setContainers(List<ContainerInfo> containers) {
+        this.containers = containers;
+    }
+
+    public void setTotalWeight(float totalWeight) {
+        this.totalWeight = totalWeight;
     }
 }
