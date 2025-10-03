@@ -36,4 +36,24 @@ public class ContainerInfo {
     public String getType() {
         return type;
     }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setBoxIds(List<String> boxIds) {
+        this.boxIds = boxIds;
+    }
+
+    public void setWeight(float weight) {
+        this.weight = weight;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
 }

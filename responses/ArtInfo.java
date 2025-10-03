@@ -13,7 +13,15 @@ public class ArtInfo {
         return id;
     }
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public float getWeight() {
         return weight;
+    }
+
+    public void setWeight(float weight) {
+        this.weight = weight;
     }
 }
