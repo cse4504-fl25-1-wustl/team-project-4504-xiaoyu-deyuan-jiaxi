@@ -1,60 +1,63 @@
 package parser;
 
 import entities.Art;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+
+import java.io.*;
+import java.util.*;
 
 public class CSVParser {
 
     public List<Art> parse(String filePath) {
-        List<Art> items = new ArrayList<>();
-        if (filePath == null) return items;
+        List<Art> arts = new ArrayList<>();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            String line;
-            boolean isFirstLine = true;
-            
-            while ((line = reader.readLine()) != null) {
-                line = line.trim();
-                if (line.isEmpty()) continue;
-                
-                // Skip header line
-                if (isFirstLine && (line.toLowerCase().startsWith("id") || line.toLowerCase().startsWith("item"))) {
-                    isFirstLine = false;
-                    continue;
-                }
-                
-                String[] parts = line.split(",");
-                if (parts.length < 5) {
-                    System.out.println("Skipping line (not enough data): " + line);
-                    continue;
-                }
-
-                try {
-                    String id = parts[0].trim();
-                    float weight = Float.parseFloat(parts[1].trim());
-                    int height = Integer.parseInt(parts[2].trim());
-                    int width = Integer.parseInt(parts[3].trim());
-                    int length = Integer.parseInt(parts[4].trim());
-                    boolean inBox = parts.length >= 6 && Boolean.parseBoolean(parts[5].trim());
-                    
-                    Art art = new Art(id, weight, height, width, length, inBox);
-                    items.add(art);
-                    
-                } catch (NumberFormatException e) {
-                    System.out.println("Skipping line (invalid number): " + line);
-                }
-                isFirstLine = false;
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String headerLine = br.readLine();
+            if (headerLine == null) return arts;
+            String[] headers = headerLine.split(",");
+            Map<String, Integer> headerIndex = new HashMap<>();
+            for (int i = 0; i < headers.length; i++) {
+                headerIndex.put(headers[i].trim(), i);
             }
-            
+
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.isBlank()) continue;
+                String[] tokens = line.split(",");
+
+                String id = get(tokens, headerIndex, "Tag #", "UNKNOWN");
+
+                int width = (int) Math.ceil(parseDouble(get(tokens, headerIndex, "Outside Size Width", "0")));
+                int height = (int) Math.ceil(parseDouble(get(tokens, headerIndex, "Outside Size Height", "0")));
+                int length = 0; // Some CSVs may not have depth/thickness, default to 0
+
+                // Weight: use the "Weight" column if it exists, otherwise 0
+                float weight = parseFloat(get(tokens, headerIndex, "Weight", "0"));
+
+                // inBox: usually decided later by Packer, default to false
+                boolean inBox = false;
+
+                arts.add(new Art(id, weight, height, width, length, inBox));
+            }
         } catch (IOException e) {
-            System.out.println("Error reading file: " + e.getMessage());
+            e.printStackTrace();
         }
 
-        System.out.println("Parsed " + items.size() + " items from CSV");
-        return items;
+        return arts;
+    }
+
+    // Helper: safely get a column value, return default if missing or out of bounds
+    private String get(String[] tokens, Map<String, Integer> idx, String col, String def) {
+        Integer i = idx.get(col);
+        if (i == null || i >= tokens.length) return def;
+        String v = tokens[i].trim();
+        return v.isEmpty() ? def : v;
+    }
+
+    private double parseDouble(String val) {
+        try { return Double.parseDouble(val); } catch (Exception e) { return 0.0; }
+    }
+
+    private float parseFloat(String val) {
+        try { return Float.parseFloat(val); } catch (Exception e) { return 0f; }
     }
 }
