@@ -3,8 +3,11 @@ package interactor;
 import entities.Art;
 import entities.Box;
 import entities.Container;
+import entities.Material;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Packer {
     private List<Art> artsToPack;
@@ -19,44 +22,44 @@ public class Packer {
 
     public void pack() {
         if (artsToPack == null || artsToPack.isEmpty()) return;
-        
-        // Sort by weight (heavier first)
-        List<Art> sorted = new ArrayList<>(artsToPack);
-        sorted.sort((a, b) -> Float.compare(b.getWeight(), a.getWeight()));
+
+        Map<Material, List<Art>> artsByMaterial = new HashMap<>();
+        for (Art art : artsToPack) {
+            artsByMaterial.computeIfAbsent(art.getMaterial(), k -> new ArrayList<>()).add(art);
+        }
 
         int boxCounter = 1;
-        for (Art art : sorted) {
-            boolean placed = false;
-            
-            // Try existing boxes first
-            for (Box box : boxesUsed) {
-                if (!box.isFull() && box.tryAddArt(art)) {
-                    placed = true;
-                    break;
+
+        for(List<Art> materialArts : artsByMaterial.values()) {
+            materialArts.sort((a,b)->Float.compare(b.getWeight(), a.getWeight()));
+            for (Art art : materialArts) {
+                boolean placed = false;
+
+                // Try existing boxes first
+                for (Box box : boxesUsed) {
+                    if (!box.isFull() && 
+                        !box.getArtsInBox().isEmpty() && 
+                        box.getArtsInBox().get(0).getMaterial() == art.getMaterial() && 
+                        box.tryAddArt(art)) {
+                        placed = true;
+                        break;
+                    }
+                }
+
+                // Create new box if needed
+                if (!placed) {
+                    Box newBox = new Box("B" + boxCounter++, 0, 0, 0, 0f, new ArrayList<>());
+                    if (newBox.tryAddArt(art)) {
+                        boxesUsed.add(newBox);
+                    }
                 }
             }
             
-            // Create new box if needed
-            if (!placed) {
-                Box newBox = createAppropriateBox(boxCounter++);
-                if (newBox.tryAddArt(art)) {
-                    boxesUsed.add(newBox);
-                }
-            }
         }
 
         packContainer(false);
     }
 
-    private Box createAppropriateBox(int counter) {
-        if (artsToPack.get(0).fitStandardBox()) {
-            return new Box("B" + counter, 10, 10, 10, 50.0f, new ArrayList<>());
-        } else if (artsToPack.get(0).fitLargeBox()) {
-            return new Box("B" + counter, 20, 20, 20, 200.0f, new ArrayList<>());
-        } else {
-            return new Box("B" + counter, 100, 100, 100, 1000.0f, new ArrayList<>());
-        }
-    }
 
     public List<Art> getArtsToPack() {
         return artsToPack;
@@ -79,21 +82,14 @@ public class Packer {
         if (boxesUsed.isEmpty()) return;
 
         int containerCounter = 1;
-        Container current = new Container("C" + containerCounter++, 100, 100, new ArrayList<>(), false);
+        Container current = new Container("C" + containerCounter++, 0, 0, new ArrayList<>(), false);
 
         for (Box box : boxesUsed) {
             if (!current.tryAddBox(box)) {
                 containersUsed.add(current);
-                current = new Container("C" + containerCounter++, 100, 100, new ArrayList<>(), false);
+                current = new Container("C" + containerCounter++, 0, 0, new ArrayList<>(), false);
                 
-                if (!current.tryAddBox(box) && acceptCrate) {
-                    Container crate = new Container("CR" + containerCounter++, 200, 200, new ArrayList<>(), true);
-                    crate.tryAddBox(box);
-                    containersUsed.add(crate);
-                    current = new Container("C" + containerCounter++, 100, 100, new ArrayList<>(), false);
-                } else {
-                    current.tryAddBox(box);
-                }
+                current.tryAddBox(box);
             }
         }
 
@@ -103,12 +99,12 @@ public class Packer {
     }
 
     public void optimizePacking() {
-        // Simple optimization: re-pack containers
-        List<Box> boxesCopy = new ArrayList<>(boxesUsed);
+        // Re-pack with material grouping
+        List<Art> originalArts = new ArrayList<>(artsToPack);
+        artsToPack.clear();
         boxesUsed.clear();
         containersUsed.clear();
-        
-        boxesUsed = boxesCopy;
-        packContainer(true);
+        artsToPack = originalArts;
+        pack();
     }
 }
