@@ -24,7 +24,7 @@ public class ArtPackerCli { // <-- Changed from HelloWorld to ArtPackerCli
 
         Request packRequest = new Request(arts, true);
 
-        Packer packer = new Packer(packRequest.getArtsToPack());
+        Packer packer = new Packer(packRequest.getArtObjects());
         packer.pack();
 
         // Create the response object
