@@ -1,7 +1,7 @@
 package parser;
 
 import entities.Art;
-
+import entities.Material;
 import java.io.*;
 import java.util.*;
 
@@ -33,10 +33,13 @@ public class CSVParser {
                 // Weight: use the "Weight" column if it exists, otherwise 0
                 float weight = parseFloat(get(tokens, headerIndex, "Weight", "0"));
 
+                String materialStr = get(tokens, headerIndex, "Material", "UNKNOWN");
+                Material material = Material.fromString(materialStr);
+
                 // inBox: usually decided later by Packer, default to false
                 boolean inBox = false;
 
-                arts.add(new Art(id, weight, height, width, length, inBox));
+                arts.add(new Art(id, weight, height, width, length, inBox, material));
             }
         } catch (IOException e) {
             e.printStackTrace();

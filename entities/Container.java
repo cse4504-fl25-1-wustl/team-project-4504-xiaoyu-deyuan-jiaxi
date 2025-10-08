@@ -18,58 +18,75 @@ public class Container {
         this.boxInContainer = boxInContainer;
         this.isCrate = isCrate;
     }
+    
     public String getId() {
         return id;
     }
+    
     public int getWidth() {
         return width;
     }
+    
     public int getLength() {
         return length;
     }
+    
     public List<Box> getBoxInContainer() {
         return boxInContainer;
     }
+    
     public boolean isCrate() {
         return isCrate;
     }
+    
     public boolean isFull() {
-        //crate need to modify the interface to work I guess?
-    	if (isCrate) {
+        if (isCrate) {
             if (boxInContainer.isEmpty() || boxInContainer.get(0).getArtsInBox().isEmpty()) {
                 return false;
             }
             Art firstArt = boxInContainer.get(0).getArtsInBox().get(0);
-            String material = firstArt.getMaterial();
+            Material material = firstArt.getMaterial();
             boolean isLarge = firstArt.getWidth() > 33 || firstArt.getHeight() > 33;
             int maxPieces;
+            
             switch (material) {
-                case "Glass/Acrylic":
+                case GLASS_ACRYLIC_FRAMED:
+                case GLASS_ACRYLIC_SUNRISE:
                     maxPieces = isLarge ? 18 : 25;
                     break;
-                case "Canvas":
+                case CANVAS_FRAMED_GALLERY:
+                case CANVAS:
                     maxPieces = isLarge ? 12 : 18;
                     break;
-                case "Mirrors":
+                case MIRRORS:
                     maxPieces = 25;
                     break;
+                case ACOUSTIC_PANELS:
+                case PAPER:
+                case WOOD:
+                case METAL:
+                    maxPieces = isLarge ? 12 : 18; // Default for other materials
+                    break;
+                case SCULPTURE:
+                case PHOTOGRAPH:
+                case UNKNOWN:
                 default:
-                    return true; 
+                    return true; // Special handling materials
             }
+            
             int currentPieces = 0;
             for (Box box : boxInContainer) {
                 currentPieces += box.getArtsInBox().size();
             }
             return currentPieces >= maxPieces;
-        }
-    	else {
+        } else {
             int maxBoxes = 4;
             return boxInContainer.size() >= maxBoxes;
         }
     }
+    
     public float getTotalWeight() {
-        //calculate the total weight
-    	float totalWeight = weight;
+        float totalWeight = weight;
         for (Box box : boxInContainer) {
             totalWeight += box.getWeight();
         }
@@ -77,16 +94,16 @@ public class Container {
     }
 
     public boolean tryAddBox(Box box) {
-        //try to add box into the container
-    	if (!isFull()) {
+        if (!isFull()) {
             boxInContainer.add(box);
+            box.setInContainer(true);
             return true;
         }
         return false;
     }
     
     public boolean remove(Box box) {
-    	Iterator<Box> iterator = boxInContainer.iterator();
+        Iterator<Box> iterator = boxInContainer.iterator();
 
         while (iterator.hasNext()) {
             Box currentBox = iterator.next();
@@ -98,5 +115,4 @@ public class Container {
         }
         return false;
     }
-
 }

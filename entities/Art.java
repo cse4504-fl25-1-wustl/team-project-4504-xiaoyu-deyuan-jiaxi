@@ -7,16 +7,16 @@ public class Art {
     private int width;
     private int length;
     private boolean inBox;
-    private String material;
+    private Material material;
 
-    public Art(String id, float weight, int height, int width, int length, boolean inBox) {
+    public Art(String id, float weight, int height, int width, int length, boolean inBox, Material material) {
         this.id = id;
         this.weight = weight;
         this.height = height;
         this.width = width;
         this.length = length;
         this.inBox = inBox;
-        this.material = "Glass/Acrylic Framed";
+        this.material = material;
     }
 
     public String getId() {
@@ -39,8 +39,12 @@ public class Art {
         return length;
     }
     
-    public String getMaterial() {
+    public Material getMaterial() {
         return material;
+    }
+
+    public void setMaterial(Material material) {
+        this.material = material;
     }
 
     
