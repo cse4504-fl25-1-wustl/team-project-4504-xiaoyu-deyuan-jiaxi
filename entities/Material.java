@@ -1,27 +1,31 @@
 package entities;
 
 public enum Material {
-    GLASS_ACRYLIC_FRAMED("Glass/Acrylic Framed"),
-    GLASS_ACRYLIC_SUNRISE("Glass/Acrylic (Sunrise)"),
-    CANVAS_FRAMED_GALLERY("Canvas (Framed/Gallery)"),
-    ACOUSTIC_PANELS("Acoustic Panels"),
-    MIRRORS("Mirrors"),
-    CANVAS("Canvas"),
-    PAPER("Paper"),
-    WOOD("Wood"),
-    METAL("Metal"),
-    SCULPTURE("Sculpture"),
-    PHOTOGRAPH("Photograph"),
-    UNKNOWN("Unknown");
-    
+	GLASS("Glass", 0.0098),
+    ACRYLIC("Acrylic", 0.0094),
+    CANVAS_FRAMED("Canvas-Framed", 0.0085),
+    CANVAS_GALLERY("Canvas-Gallery", 0.0061),
+    MIRROR("Mirror", 0.0191),
+    ACOUSTIC_PANEL("Acoustic Panel", 0.0038),
+    ACOUSTIC_PANEL_FRAMED("Acoustic Panel-Framed", 0.0037),
+    PATIENT_BOARD("Patient Board", 0.0347),
+    UNKNOWN("Unknown", 0.0); // A default value for unknown or unsupported materials.
+
     private final String displayName;
+    private final double weightPerSquareInch;
     
-    Material(String displayName) {
+    Material(String displayName, double weightPerSquareInch)
+    {
         this.displayName = displayName;
+        this.weightPerSquareInch = weightPerSquareInch;
     }
     
     public String getDisplayName() {
         return displayName;
+    }
+    
+    public double getWeight() {
+        return weight;
     }
     
     // Convert from CSV string to enum
@@ -35,24 +39,6 @@ public enum Material {
             if (material.displayName.equalsIgnoreCase(normalized)) {
                 return material;
             }
-        }
-        
-        // Handle common variations or abbreviations
-        switch (normalized.toLowerCase()) {
-            case "glass":
-            case "acrylic":
-            case "glass/acrylic":
-                return GLASS_ACRYLIC_FRAMED;
-            case "canvas":
-            case "framed canvas":
-                return CANVAS_FRAMED_GALLERY;
-            case "acoustic":
-            case "acoustic panel":
-                return ACOUSTIC_PANELS;
-            case "mirror":
-                return MIRRORS;
-            default:
-                return UNKNOWN;
         }
     }
 }
