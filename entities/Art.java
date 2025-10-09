@@ -1,5 +1,7 @@
 package entities;
 
+import interactor.PackingRules;
+
 public class Art {
     private String id;
     private float weight;
@@ -50,21 +52,21 @@ public class Art {
     
     public boolean fitStandardBox() {
         //check the rules
-        return (width <= 36 && height <= 36 && length <= 36);
+        return (width <= PackingRules.STANDARD_BOX_LIMIT && height <= PackingRules.STANDARD_BOX_LIMIT && length <= PackingRules.STANDARD_BOX_LIMIT);
     }
 
     public boolean fitLargeBox() {
         //check the rules
-        return (width <= 43 && height <= 43 && length <= 43);
+        return (width <= PackingRules.LARGE_BOX_LIMIT && height <= PackingRules.LARGE_BOX_LIMIT && length <= PackingRules.LARGE_BOX_LIMIT);
     }
     public boolean fitCrate() {
         //check the rules
-        return (width <= 46 && height <= 46 && length <= 46);
+        return (width <= PackingRules.CRATE_LIMIT && height <= PackingRules.CRATE_LIMIT && length <= PackingRules.CRATE_LIMIT);
     }
 
     public boolean fitHeight() {
         //check the rules
-        return (width <= 84 && height <= 84 && length <= 84);
+        return (width <= PackingRules.MAX_RECOMMENDED_HEIGHT && height <= PackingRules.MAX_RECOMMENDED_HEIGHT && length <= PackingRules.MAX_RECOMMENDED_HEIGHT);
     }
     public boolean specialHandle() {
         //check the rules

@@ -1,6 +1,7 @@
 package entities;
 import java.util.Iterator;
 import java.util.List;
+import interactor.PackingRules;
 
 public class Container {
     private String id;
@@ -46,26 +47,26 @@ public class Container {
             }
             Art firstArt = boxInContainer.get(0).getArtsInBox().get(0);
             Material material = firstArt.getMaterial();
-            boolean isLarge = firstArt.getWidth() > 33 || firstArt.getHeight() > 33;
+            boolean isLarge = firstArt.getWidth() > PackingRules.LARGE_ART_SIZE_THRESHOLD || firstArt.getHeight() > PackingRules.LARGE_ART_SIZE_THRESHOLD;
             int maxPieces;
             
             switch (material) {
                 case GLASS_ACRYLIC_FRAMED:
                 case GLASS_ACRYLIC_SUNRISE:
-                    maxPieces = isLarge ? 18 : 25;
+                    maxPieces = isLarge ? PackingRules.MAX_PIECES_GLASS_LARGE : PackingRules.MAX_PIECES_GLASS_SMALL;
                     break;
                 case CANVAS_FRAMED_GALLERY:
                 case CANVAS:
-                    maxPieces = isLarge ? 12 : 18;
+                    maxPieces = isLarge ? PackingRules.MAX_PIECES_CANVAS_LARGE : PackingRules.MAX_PIECES_CANVAS_SMALL;
                     break;
                 case MIRRORS:
-                    maxPieces = 25;
+                    maxPieces = PackingRules.MAX_PIECES_MIRROR;
                     break;
                 case ACOUSTIC_PANELS:
                 case PAPER:
                 case WOOD:
                 case METAL:
-                    maxPieces = isLarge ? 12 : 18; // Default for other materials
+                    maxPieces = isLarge ? PackingRules.MAX_PIECES_OTHER_LARGE : PackingRules.MAX_PIECES_OTHER_SMALL; // Default for other materials
                     break;
                 case SCULPTURE:
                 case PHOTOGRAPH:
@@ -80,8 +81,8 @@ public class Container {
             }
             return currentPieces >= maxPieces;
         } else {
-            int maxBoxes = 4;
-            return boxInContainer.size() >= maxBoxes;
+
+            return boxInContainer.size() >= PackingRules.MAX_BOXES_PER_PALLET;
         }
     }
     

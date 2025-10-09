@@ -6,7 +6,7 @@ import java.util.List;
 public class Box {
     private String id;
     private int width;
-    private int height;
+     private int height;
     private int length;
     private float weight;
     private boolean inContainer;
