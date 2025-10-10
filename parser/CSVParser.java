@@ -24,22 +24,29 @@ public class CSVParser {
                 if (line.isBlank()) continue;
                 String[] tokens = line.split(",");
 
-                String id = get(tokens, headerIndex, "Tag #", "UNKNOWN");
+                
+                String id = get(tokens, headerIndex, "tag number", "UNKNOWN");
+                int quantity = parseInt(get(tokens, headerIndex, "quantity", "1"));
 
                 int width = (int) Math.ceil(parseDouble(get(tokens, headerIndex, "Outside Size Width", "0")));
                 int height = (int) Math.ceil(parseDouble(get(tokens, headerIndex, "Outside Size Height", "0")));
-                int length = 0; // Some CSVs may not have depth/thickness, default to 0
+                int length = 0; 
 
-                // Weight: use the "Weight" column if it exists, otherwise 0
-                float weight = parseFloat(get(tokens, headerIndex, "Weight", "0"));
+                
+                String medium = get(tokens, headerIndex, "Final medium", "");
+                String glazing = get(tokens, headerIndex, "Glazing", "");
+                Material material = determineMaterial(medium, glazing);
 
-                String materialStr = get(tokens, headerIndex, "Material", "UNKNOWN");
-                Material material = Material.fromString(materialStr);
+                
+                float weight = calculateWeight(material, width, height, length);
 
-                // inBox: usually decided later by Packer, default to false
                 boolean inBox = false;
 
-                arts.add(new Art(id, weight, height, width, length, inBox, material));
+                
+                for (int i = 0; i < quantity; i++) {
+                    String uniqueId = quantity > 1 ? id + "_" + (i + 1) : id;
+                    arts.add(new Art(uniqueId, weight, height, width, length, inBox, material));
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -48,7 +55,47 @@ public class CSVParser {
         return arts;
     }
 
-    // Helper: safely get a column value, return default if missing or out of bounds
+    private Material determineMaterial(String medium, String glazing) {
+        if (medium.contains("Paper Print") && medium.contains("Framed")) {
+            if (glazing.contains("Glass")) {
+                return Material.GLASS; 
+            } else if (glazing.contains("Acrylic")) {
+                return Material.ACRYLIC; 
+            }
+        }
+        else if (medium.contains("Acoustic Panel") && medium.contains("Framed")) {
+            return Material.ACOUSTIC_PANEL_FRAMED;
+        } else if (medium.contains("Acoustic Panel")) {
+            return Material.ACOUSTIC_PANEL;
+        } else if (medium.contains("Patient Board")) {
+            return Material.PATIENT_BOARD;
+        }
+        else if (medium.contains("Canvas") && medium.contains("Gallery")) {
+            return Material.CANVAS_GALLERY;
+        } else if (medium.contains("Canvas") && medium.contains("Framed")) {
+            return Material.CANVAS_FRAMED;
+        } else if (medium.contains("Mirror")) {
+            return Material.MIRROR;
+        }
+        return Material.UNKNOWN;
+    }
+
+    private float calculateWeight(Material material, int width, int height, int length) {
+        // Calculate area in square inches
+        double area = width * height;
+        // Calculate volume in cubic inches (if we had depth)
+        double volume = width * height * (length == 0 ? 1 : length);
+        
+        // Use material's weight per square inch to calculate base weight
+        double baseWeight = area * material.getWeight();
+        
+        // Add some base weight for framing/packaging
+        double totalWeight = baseWeight + 2.0; // 2kg base for framing
+        
+        return (float) totalWeight;
+    }
+
+    
     private String get(String[] tokens, Map<String, Integer> idx, String col, String def) {
         Integer i = idx.get(col);
         if (i == null || i >= tokens.length) return def;
@@ -62,5 +109,9 @@ public class CSVParser {
 
     private float parseFloat(String val) {
         try { return Float.parseFloat(val); } catch (Exception e) { return 0f; }
+    }
+
+    private int parseInt(String val) {
+        try { return Integer.parseInt(val); } catch (Exception e) { return 1; }
     }
 }
