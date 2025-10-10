@@ -4,8 +4,8 @@ import entities.Art;
 import java.util.List;
 
 public class Request {
-    private List<Art> artObjects;   // 要打包的艺术品
-    private boolean acceptCrates;   // 客户是否接受 crate
+    private List<Art> artObjects;
+    private boolean acceptCrates;
 
     public Request(List<Art> artObjects, boolean acceptCrates) {
         this.artObjects = artObjects;

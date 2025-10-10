@@ -5,12 +5,21 @@ package interactor;
  * Derived from Brianna’s Packing Rules & Box Specifications.
  */
 public final class PackingRules {
+
+    public enum BoxType {
+        STANDARD,
+        LARGE,
+        CRATE,
+        CRATE_LARGE,
+        UNBOXABLE
+    }
     /** Standard box limit: ≤ 36" per side */
     public static final int STANDARD_BOX_LIMIT = 36;
 
     /** Large box limit: ≤ 43.5" per side */
     public static final float LARGE_BOX_LIMIT = 43.5f;
 
+    public static final int CRATE_SMALL_LIMIT = 33;
     /** Crate threshold: ≤ 46" per side */
     public static final int CRATE_LIMIT = 46;
 
@@ -29,11 +38,7 @@ public final class PackingRules {
 
     public static final int CRATE_LENGTH = 50;
     public static final int CRATE_WIDTH  = 38;
-    public static final int CRATE_HEIGHT = 38;
-
-
-    // =============================
-    //  Prevent instantiation
-    // =============================
+    public static final int CRATE_HEIGHT = 102;     //max height, use it first
+    public static final int CRATE_HEIGHT_RECOMMENDED = 84;
     private PackingRules() {}
 }
