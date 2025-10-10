@@ -27,6 +27,7 @@ public class Box {
                 this.width = PackingRules.STANDARD_BOX_WIDTH;
                 this.height = PackingRules.STANDARD_BOX_HEIGHT;
                 this.length = PackingRules.STANDARD_BOX_LENGTH;
+                this.weight = PackingRules.STANDARD_PALLET_WEIGHT;
                 this.isCrateBox = false;
                 this.minNumPerBox = initialArt.getMaterial().getPiecePerBox();
                 break;
@@ -34,6 +35,7 @@ public class Box {
                 this.width = PackingRules.LARGE_BOX_WIDTH;
                 this.height = PackingRules.LARGE_BOX_HEIGHT;
                 this.length = PackingRules.LARGE_BOX_LENGTH;
+                this.weight = PackingRules.STANDARD_PALLET_WEIGHT;
                 this.isCrateBox = false;
                 this.minNumPerBox = initialArt.getMaterial().getPiecePerBox();
                 break;
@@ -88,6 +90,10 @@ public class Box {
     
     public List<Art> getArtsInBox() {
         return artsInBox;
+    }
+
+    public PackingRules.BoxType getBoxType() {
+        return boxType;
     }
 
     public boolean isFull() {

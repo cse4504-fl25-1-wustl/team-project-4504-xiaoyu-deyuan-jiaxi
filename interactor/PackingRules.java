@@ -13,6 +13,11 @@ public final class PackingRules {
         CRATE_LARGE,
         UNBOXABLE
     }
+    public static final int STANDARD_BOX = 4;
+    public static final int LARGE_BOX = 3;
+    public static final int STANDARD_PALLET_WEIGHT = 60;
+    public static final int CRATE_WEIGHT = 120;
+    
     /** Standard box limit: ≤ 36" per side */
     public static final int STANDARD_BOX_LIMIT = 36;
 
@@ -40,5 +45,8 @@ public final class PackingRules {
     public static final int CRATE_WIDTH  = 38;
     public static final int CRATE_HEIGHT = 102;     //max height, use it first
     public static final int CRATE_HEIGHT_RECOMMENDED = 84;
+
+    public static final int STANDARD_PALLET_LENGTH = 48;
+    public static final int STANDARD_PALLET_WIDTH  = 40;
     private PackingRules() {}
 }
