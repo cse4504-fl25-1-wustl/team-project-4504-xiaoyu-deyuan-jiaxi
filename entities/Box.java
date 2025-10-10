@@ -55,34 +55,7 @@ public class Box {
             return false;
         }
         Material materialType = artsInBox.get(0).getMaterial();
-        int maxPieces;
-        switch (materialType) {
-            case GLASS_ACRYLIC_FRAMED:
-                maxPieces = 6;
-                break;
-            case GLASS_ACRYLIC_SUNRISE:
-                maxPieces = 8;
-                break;
-            case CANVAS_FRAMED_GALLERY:
-                maxPieces = 4;
-                break;
-            case ACOUSTIC_PANELS:
-                maxPieces = 4;
-                break;
-            case CANVAS:
-            case PAPER:
-            case WOOD:
-            case METAL:
-                maxPieces = 4; 
-                break;
-            case MIRRORS:
-            case SCULPTURE:
-            case PHOTOGRAPH:
-            case UNKNOWN:
-            default:
-                maxPieces = 0; // Special handling materials not in standard boxes
-                break;
-        }
+        int maxPieces = materialType.getPiecePerBox();
         return artsInBox.size() >= maxPieces;
     }
     

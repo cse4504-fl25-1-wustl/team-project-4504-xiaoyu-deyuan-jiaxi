@@ -1,23 +1,28 @@
 package entities;
 
 public enum Material {
-	GLASS("Glass", 0.0098),
-    ACRYLIC("Acrylic", 0.0094),
-    CANVAS_FRAMED("Canvas-Framed", 0.0085),
-    CANVAS_GALLERY("Canvas-Gallery", 0.0061),
-    MIRROR("Mirror", 0.0191),
-    ACOUSTIC_PANEL("Acoustic Panel", 0.0038),
-    ACOUSTIC_PANEL_FRAMED("Acoustic Panel-Framed", 0.0037),
-    PATIENT_BOARD("Patient Board", 0.0347),
-    UNKNOWN("Unknown", 0.0); // A default value for unknown or unsupported materials.
+	GLASS("Glass", 0.0098, 6, 25, 18),
+    ACRYLIC("Acrylic", 0.0094, 6, 25, 18),
+    CANVAS_FRAMED("Canvas-Framed", 0.0085, 4, 18, 12),
+    CANVAS_GALLERY("Canvas-Gallery", 0.0061, 4, 18, 12),
+    MIRROR("Mirror", 0.0191, 0, 24, 0),
+    ACOUSTIC_PANEL("Acoustic Panel", 0.0038, 4, 0, 0),
+    ACOUSTIC_PANEL_FRAMED("Acoustic Panel-Framed", 0.0037, 4, 0, 0),
+    PATIENT_BOARD("Patient Board", 0.0347, 4, 0, 0),
+    UNKNOWN("Unknown", 0.0, 0, 0, 0); // A default value for unknown or unsupported materials.
 
     private final String displayName;
-    private final double weightPerSquareInch;
+    private final double weight;
+    private final int piecePerBox;
+    private final int piecePerCrate;
+    private final int piecePerCrateLarge;
     
-    Material(String displayName, double weightPerSquareInch)
-    {
+    Material(String displayName, double weight, int piecePerBox, int piecePerCrate, int piecePerCrateLarge) {
         this.displayName = displayName;
-        this.weightPerSquareInch = weightPerSquareInch;
+        this.weight = weight;
+        this.piecePerBox = piecePerBox;
+        this.piecePerCrate = piecePerCrate;
+        this.piecePerCrateLarge = piecePerCrateLarge;
     }
     
     public String getDisplayName() {
@@ -27,8 +32,19 @@ public enum Material {
     public double getWeight() {
         return weight;
     }
+
+    public int getPiecePerBox() {
+        return piecePerBox;
+    }
     
-    // Convert from CSV string to enum
+    public int getPiecePerCrate() {
+        return piecePerCrate;
+    }
+
+    public int getPiecePerCrateLarge() {
+        return piecePerCrateLarge;
+    }
+
     public static Material fromString(String materialStr) {
         if (materialStr == null || materialStr.trim().isEmpty()) {
             return UNKNOWN;
@@ -40,5 +56,6 @@ public enum Material {
                 return material;
             }
         }
+        return UNKNOWN;
     }
 }
