@@ -1,142 +1,107 @@
 package entities;
 
-import java.util.Iterator;
+import entities.enums.BoxType;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import interactor.PackingRules;
 
 public class Box {
-    private String id;
-    private int width;
-     private int height;
-    private int length;
-    private float weight;
-    private boolean inContainer;
-    private boolean isCrateBox;
-    private int minNumPerBox;
-    private List<Art> artsInBox;
-    private PackingRules.BoxType boxType;
+    private final String id;
+    private final BoxType boxType;
+    private final int width;
+    private final int minHeight; 
+    private final int length;
+    private final List<Art> artsInBox;
 
-    public Box(String id, Art initialArt)
-    {
+    /**
+     * Constructor. Note that it only accepts properties and makes no decisions.
+     * The decision of "what size of box should be created" is made in the service layer.
+     */
+    public Box(String id, BoxType boxType, int width, int length, int minHeight) {
         this.id = id;
-        this.artsInBox = new java.util.ArrayList<>();
-        this.inContainer = false;
-        this.boxType = initialArt.getBoxType();
-        switch (this.boxType) {
-            case STANDARD:
-                this.width = PackingRules.STANDARD_BOX_WIDTH;
-                this.height = PackingRules.STANDARD_BOX_HEIGHT;
-                this.length = PackingRules.STANDARD_BOX_LENGTH;
-                this.weight = PackingRules.STANDARD_PALLET_WEIGHT;
-                this.isCrateBox = false;
-                this.minNumPerBox = initialArt.getMaterial().getPiecePerBox();
-                break;
-            case LARGE:
-                this.width = PackingRules.LARGE_BOX_WIDTH;
-                this.height = PackingRules.LARGE_BOX_HEIGHT;
-                this.length = PackingRules.LARGE_BOX_LENGTH;
-                this.weight = PackingRules.STANDARD_PALLET_WEIGHT;
-                this.isCrateBox = false;
-                this.minNumPerBox = initialArt.getMaterial().getPiecePerBox();
-                break;
-                case CRATE:
-                this.width = PackingRules.CRATE_WIDTH;
-                this.height = PackingRules.CRATE_HEIGHT;
-                this.length = PackingRules.CRATE_LENGTH;
-                this.isCrateBox = true;
-                this.minNumPerBox = initialArt.getMaterial().getPiecePerCrate();
-                break;
-            case CRATE_LARGE:
-                this.width = PackingRules.CRATE_WIDTH;
-                this.height = PackingRules.CRATE_HEIGHT;
-                this.length = PackingRules.CRATE_LENGTH;
-                this.isCrateBox = true;
-                this.minNumPerBox = initialArt.getMaterial().getPiecePerCrateLarge();
-                break;
-            case UNBOXABLE:
-                throw new IllegalArgumentException("UNBOXABLE" + initialArt.getId());
-        }
-        this.artsInBox.add(initialArt);
-        initialArt.setInBox(true);
+        this.boxType = boxType;
+        this.width = width;
+        this.length = length;
+        this.minHeight = minHeight;
+        this.artsInBox = new ArrayList<>();
     }
+
+    // --- Public Methods for State Mutation ---
+    // These methods only perform "add" or "remove" operations, without containing
+    // any "can it be added?" validation logic. That logic is handled by the
+    // FeasibilityService and OptimizationService.
+
+    /**
+     * Adds an Art object to the box.
+     * This method is called by an external service that has already confirmed this action is valid.
+     * @param art The Art to add.
+     */
+    public void addArt(Art art)
+    {
+        this.artsInBox.add(art);
+    }
+
+    /**
+     * Removes an Art object from the box.
+     * @param art The Art to remove.
+     * @return true if the art was found and removed, false otherwise.
+     */
+    public boolean removeArt(Art art)
+    {
+        return this.artsInBox.remove(art);
+    }
+
+
+    // --- Getters for Accessing State ---
 
     public String getId() {
         return id;
     }
 
-    public int getWidth() {
-        return width;
+    public BoxType getBoxType() {
+        return boxType;
     }
 
-    public int getHeight() {
-        return height;
+    public int getWidth() {
+        return width;
     }
     
     public int getLength() {
         return length;
     }
 
-    public boolean isCrateBox() {
-        return isCrateBox;
-    }
-    
-    public float getWeight() {
-        float temp = weight;
-        for(Art i: artsInBox) {
-            temp += i.getWeight();
-        }
-        return temp;
-    }
-    
-    public List<Art> getArtsInBox() {
-        return artsInBox;
+    /**
+
+     * Dynamically calculates and returns the current total height of the box.
+     * This assumes the box's height is equal to the height of the tallest Art inside it.
+     * @return The maximum height of any Art within the box.
+     */
+    public int getCurrentHeight() {
+        // Step 1: Find the maximum height among all arts in the box.
+        // If the box is empty, .max() returns an empty Optional, and .orElse(0) provides a default of 0.
+        int maxArtHeight = artsInBox.stream().mapToInt(Art::getHeight).max().orElse(0);
+        // Step 2: Return the greater of the box's minimum height and the max art height.
+        return Math.max(this.minHeight, maxArtHeight);
     }
 
-    public PackingRules.BoxType getBoxType() {
-        return boxType;
-    }
+    /**
+     * Dynamically calculates and returns the current total weight of the box.
+     * @return The sum of the weights of all Art objects inside.
+     */
 
-    public boolean isFull() {
-        if (artsInBox.isEmpty() || minNumPerBox == 0) {
-            return false;
-        }
-        return artsInBox.size() >= minNumPerBox;
-    }
-    
-    public boolean tryAddArt(Art art) {
-        if (isFull() || art.isInBox())
-        {
-            return false;
-        }
-        if (art.getBoxType() == this.boxType) {
-            artsInBox.add(art);
-            art.setInBox(true);
-            return true;
-        }
-        return false;
-    }
-    
-    //will be used in the future if we want to remove an art from a box
-    public boolean remove(Art art) {
-        Iterator<Art> iterator = artsInBox.iterator();
-
-        while (iterator.hasNext()) {
-            Art currentArt = iterator.next();
-            if (currentArt.equals(art)) {
-                currentArt.setInBox(false);
-                iterator.remove();
-                return true;
-            }
-        }
-        return false;
-    }   
-
-    public void setInContainer(boolean status)
+    public double getTotalWeight()
     {
-        inContainer = status;
+        // Using Java Stream API for a more concise calculation.
+        return artsInBox.stream().mapToDouble(Art::getWeight).sum();
     }
-    
-    public boolean isInContainer() {
-        return inContainer;
+
+    /**
+     * Returns an unmodifiable view of the internal list of Arts.
+     * This prevents external code from accidentally modifying the list while allowing
+     * it to be iterated over.
+     * @return An unmodifiable view of the list of Arts in the box.
+     */
+    public List<Art> getArtsInBox() {
+        return Collections.unmodifiableList(artsInBox);
     }
 }

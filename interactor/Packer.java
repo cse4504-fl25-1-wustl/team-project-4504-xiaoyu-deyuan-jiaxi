@@ -1,110 +1,68 @@
 package interactor;
 
+import config.RuleProvider;
+import config.StrategyProvider;
+import config.spec.BoxRuleSpecification;
+import config.spec.ContainerRuleSpecification;
 import entities.Art;
-import entities.Box;
-import entities.Container;
-import entities.Material;
-import java.util.ArrayList;
-import java.util.HashMap;
+import entities.enums.ShippingProvider;
+import service.FeasibilityService;
+import service.OptimizationService;
+import service.costing.ShippingCostStrategy;
+
 import java.util.List;
-import java.util.Map;
 
-public class Packer {
-    private List<Art> artsToPack;
-    private List<Box> boxesUsed;
-    private List<Container> containersUsed;
+/**
+ * The public facade for the entire packing system.
+ * This is the single entry point for any external program that needs to run the
+ * packing algorithm. It hides the internal complexity of service initialization
+ * and orchestration.
+ */
+public final class Packer {
 
-    public Packer(List<Art> artsToPack) {
-        this.artsToPack = artsToPack;
-        this.boxesUsed = new ArrayList<>();
-        this.containersUsed = new ArrayList<>();
-    }
+    /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
+    private Packer() {}
 
-    public void pack() {
-        if (artsToPack == null || artsToPack.isEmpty()) return;
+    /**
+     * The main public method to execute the packing process.
+     * It takes a list of arts and all necessary constraints/strategies,
+     * runs the entire optimization process, and returns a complete, immutable packing plan.
+     *
+     * @param artsToPack The list of Art objects that need to be packed.
+     * @param constraints The user-defined constraints for this specific packing run.
+     * @param provider The shipping provider to use, which determines the cost strategy.
+     * @return A complete PackingPlan object containing the results of the optimization.
+     */
+    public static PackingPlan pack(List<Art> artsToPack, UserConstraints constraints, ShippingProvider provider) {
+        
+        // --- Step 1: Load all configurations and strategies ---
+        
+        // Get the static business rules for art-to-box packing.
+        List<BoxRuleSpecification> boxRules = RuleProvider.getBoxRules(constraints);
+        
+        // Get the static business rules for box-to-container packing.
+        List<ContainerRuleSpecification> containerRules = RuleProvider.getContainerRules();
+        
+        // Get the appropriate cost calculation strategy based on the selected provider.
+        ShippingCostStrategy costStrategy = StrategyProvider.getCostStrategy(provider);
 
-        Map<Material, List<Art>> artsByMaterial = new HashMap<>();
-        for (Art art : artsToPack) {
-            artsByMaterial.computeIfAbsent(art.getMaterial(), k -> new ArrayList<>()).add(art);
-        }
+        // --- Step 2: Initialize the core services with the loaded configurations ---
 
-        int boxCounter = 1;
+        // Create the rule checker, providing it with the rulebooks it needs.
+        FeasibilityService feasibilityService = new FeasibilityService(boxRules, containerRules);
+        
+        // Create the optimization engine, providing it with the rule checker and cost strategy.
+        OptimizationService optimizationService = new OptimizationService(feasibilityService, costStrategy);
 
-        for(List<Art> materialArts : artsByMaterial.values()) {
-            materialArts.sort((a,b)->Float.compare(b.getWeight(), a.getWeight()));
-            for (Art art : materialArts) {
-                boolean placed = false;
+        // --- Step 3: Execute the core logic and get the final plan ---
+        
+        // Call the optimization service to perform the complex calculations.
+        PackingPlan finalPlan = optimizationService.createOptimalPlan(artsToPack, constraints);
 
-                // Try existing boxes first
-                for (Box box : boxesUsed) {
-                    if (!box.isFull() && 
-                        !box.getArtsInBox().isEmpty() && 
-                        box.getArtsInBox().get(0).getMaterial() == art.getMaterial() && 
-                        box.tryAddArt(art)) {
-                        placed = true;
-                        break;
-                    }
-                }
-
-                // Create new box if needed
-                if (!placed) {
-                    Box newBox = new Box("B" + boxCounter++, 0, 0, 0, 0f, new ArrayList<>());
-                    if (newBox.tryAddArt(art)) {
-                        boxesUsed.add(newBox);
-                    }
-                }
-            }
-            
-        }
-
-        packContainer(false);
-    }
-
-
-    public List<Art> getArtsToPack() {
-        return artsToPack;
-    }
-
-    public List<Box> getBoxesUsed() {
-        return boxesUsed;
-    }
-
-    public List<Container> getContainersUsed() {
-        return containersUsed;
-    }
-
-    public void packBox() {
-        pack();
-    }
-
-    public void packContainer(boolean acceptCrate) {
-        containersUsed.clear();
-        if (boxesUsed.isEmpty()) return;
-
-        int containerCounter = 1;
-        Container current = new Container("C" + containerCounter++, 0, 0, new ArrayList<>(), false);
-
-        for (Box box : boxesUsed) {
-            if (!current.tryAddBox(box)) {
-                containersUsed.add(current);
-                current = new Container("C" + containerCounter++, 0, 0, new ArrayList<>(), false);
-                
-                current.tryAddBox(box);
-            }
-        }
-
-        if (!current.getBoxInContainer().isEmpty()) {
-            containersUsed.add(current);
-        }
-    }
-
-    public void optimizePacking() {
-        // Re-pack with material grouping
-        List<Art> originalArts = new ArrayList<>(artsToPack);
-        artsToPack.clear();
-        boxesUsed.clear();
-        containersUsed.clear();
-        artsToPack = originalArts;
-        pack();
+        // --- Step 4: Return the result ---
+        
+        return finalPlan;
     }
 }
