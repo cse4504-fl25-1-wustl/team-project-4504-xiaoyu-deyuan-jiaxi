@@ -1,3 +1,5 @@
+package archdesign;
+
 import archdesign.entities.Art;
 import archdesign.entities.enums.Material;
 import archdesign.entities.enums.ShippingProvider;

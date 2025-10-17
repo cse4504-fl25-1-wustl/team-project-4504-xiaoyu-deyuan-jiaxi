@@ -34,3 +34,9 @@ application {
     // Define the main class for the application.
     mainClass = "archdesign.Main"
 }
+
+// temporarily disable test failure on no tests, need to be removed after tests are added
+tasks.test {
+    // Do not fail if there are no tests
+    failOnNoDiscoveredTests = false
+}
