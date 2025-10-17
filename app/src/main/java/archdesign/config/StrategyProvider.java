@@ -1,8 +1,8 @@
-package config;
+package archdesign.config;
 
-import entities.enums.ShippingProvider;
-import service.costing.PlaceholderCostStrategy;
-import service.costing.ShippingCostStrategy;
+import archdesign.entities.enums.ShippingProvider;
+import archdesign.service.costing.PlaceholderCostStrategy;
+import archdesign.service.costing.ShippingCostStrategy;
 import java.util.Map;
 
 /**

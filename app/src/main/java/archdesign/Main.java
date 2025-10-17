@@ -1,16 +1,16 @@
-import entities.Art;
-import entities.enums.Material;
-import entities.enums.ShippingProvider;
-import interactor.Packer;
-import interactor.PackingPlan;
-import interactor.UserConstraints;
-import request.ArtImporter; // 确认使用 request 包
-import parser.CsvParser;
-import response.Response;
-import response.ShipmentViewModel;
-import response.ContainerViewModel;
-import response.BoxViewModel;
-import response.ArtViewModel;
+import archdesign.entities.Art;
+import archdesign.entities.enums.Material;
+import archdesign.entities.enums.ShippingProvider;
+import archdesign.interactor.Packer;
+import archdesign.interactor.PackingPlan;
+import archdesign.interactor.UserConstraints;
+import archdesign.request.ArtImporter; // 确认使用 request 包
+import archdesign.parser.CsvParser;
+import archdesign.response.Response;
+import archdesign.response.ShipmentViewModel;
+import archdesign.response.ContainerViewModel;
+import archdesign.response.BoxViewModel;
+import archdesign.response.ArtViewModel;
 
 import java.util.ArrayList;
 import java.util.List;

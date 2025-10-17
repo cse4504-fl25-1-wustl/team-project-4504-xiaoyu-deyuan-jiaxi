@@ -1,6 +1,6 @@
-package entities;
+package archdesign.entities;
 
-import entities.enums.Material;
+import archdesign.entities.enums.Material;
 
 public class Art {
     private final String id;

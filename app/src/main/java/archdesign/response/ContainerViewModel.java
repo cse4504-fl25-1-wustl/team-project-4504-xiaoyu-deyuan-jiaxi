@@ -1,4 +1,4 @@
-package response;
+package archdesign.response;
 import java.util.List;
 
 /**

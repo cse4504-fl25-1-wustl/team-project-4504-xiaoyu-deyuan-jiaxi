@@ -1,4 +1,4 @@
-package parser;
+package archdesign.parser;
 
 /**
  * A simple, immutable data record to hold the raw data parsed from a single

@@ -1,6 +1,6 @@
-package service.costing;
+package archdesign.service.costing;
 
-import entities.Container;
+import archdesign.entities.Container;
 
 /**
  * Defines the contract for all shipping cost calculation strategies.

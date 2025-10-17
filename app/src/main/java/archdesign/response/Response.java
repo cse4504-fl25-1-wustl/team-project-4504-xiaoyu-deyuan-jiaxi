@@ -1,9 +1,9 @@
-package response;
+package archdesign.response;
 
-import entities.Art;
-import entities.Box;
-import entities.Container;
-import interactor.PackingPlan; // Assuming PackingPlan is in interactor
+import archdesign.entities.Art;
+import archdesign.entities.Box;
+import archdesign.entities.Container;
+import archdesign.interactor.PackingPlan; // Assuming PackingPlan is in interactor
 
 import java.util.stream.Collectors;
 

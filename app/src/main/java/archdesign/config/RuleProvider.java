@@ -1,11 +1,11 @@
-package config;
+package archdesign.config;
 
-import config.spec.BoxRuleSpecification;
-import config.spec.ContainerRuleSpecification;
-import entities.enums.BoxType;
-import entities.enums.ContainerType;
-import entities.enums.Material;
-import interactor.UserConstraints;
+import archdesign.config.spec.BoxRuleSpecification;
+import archdesign.config.spec.ContainerRuleSpecification;
+import archdesign.entities.enums.BoxType;
+import archdesign.entities.enums.ContainerType;
+import archdesign.entities.enums.Material;
+import archdesign.interactor.UserConstraints;
 
 import java.util.List;
 

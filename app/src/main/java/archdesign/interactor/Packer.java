@@ -1,14 +1,14 @@
-package interactor;
+package archdesign.interactor;
 
-import config.RuleProvider;
-import config.StrategyProvider;
-import config.spec.BoxRuleSpecification;
-import config.spec.ContainerRuleSpecification;
-import entities.Art;
-import entities.enums.ShippingProvider;
-import service.FeasibilityService;
-import service.OptimizationService;
-import service.costing.ShippingCostStrategy;
+import archdesign.config.RuleProvider;
+import archdesign.config.StrategyProvider;
+import archdesign.config.spec.BoxRuleSpecification;
+import archdesign.config.spec.ContainerRuleSpecification;
+import archdesign.entities.Art;
+import archdesign.entities.enums.ShippingProvider;
+import archdesign.service.FeasibilityService;
+import archdesign.service.OptimizationService;
+import archdesign.service.costing.ShippingCostStrategy;
 
 import java.util.List;
 

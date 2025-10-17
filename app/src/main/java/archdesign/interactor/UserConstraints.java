@@ -1,8 +1,8 @@
-package interactor;
+package archdesign.interactor;
 
 
-import entities.enums.BoxType;
-import entities.enums.ContainerType;
+import archdesign.entities.enums.BoxType;
+import archdesign.entities.enums.ContainerType;
 
 import java.util.Arrays;
 import java.util.Collections;

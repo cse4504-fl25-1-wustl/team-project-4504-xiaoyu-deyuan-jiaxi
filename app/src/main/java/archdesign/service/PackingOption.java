@@ -1,6 +1,6 @@
-package service;
+package archdesign.service;
 
-import entities.enums.BoxType;
+import archdesign.entities.enums.BoxType;
 
 /**
  * A simple, immutable data record to hold a valid packing option.

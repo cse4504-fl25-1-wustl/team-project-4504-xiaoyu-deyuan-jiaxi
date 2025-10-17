@@ -1,7 +1,7 @@
-package config.spec;
+package archdesign.config.spec;
 
-import entities.enums.BoxType;
-import entities.enums.ContainerType;
+import archdesign.entities.enums.BoxType;
+import archdesign.entities.enums.ContainerType;
 
 /**
  * Represents a single, immutable rule for packing a Box into a Container.

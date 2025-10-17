@@ -1,5 +1,5 @@
-package service.costing;
-import entities.Container;
+package archdesign.service.costing;
+import archdesign.entities.Container;
 
 /**
  * A placeholder cost calculation strategy used for development and testing.

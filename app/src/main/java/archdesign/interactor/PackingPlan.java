@@ -1,6 +1,6 @@
-package interactor;
+package archdesign.interactor;
 
-import entities.Container;
+import archdesign.entities.Container;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

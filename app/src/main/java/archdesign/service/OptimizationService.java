@@ -1,13 +1,13 @@
-package service;
+package archdesign.service;
 
-import entities.Art;
-import entities.Box;
-import entities.Container;
-import entities.enums.BoxType;
-import entities.enums.ContainerType;
-import interactor.PackingPlan;
-import interactor.UserConstraints;
-import service.costing.ShippingCostStrategy;
+import archdesign.entities.Art;
+import archdesign.entities.Box;
+import archdesign.entities.Container;
+import archdesign.entities.enums.BoxType;
+import archdesign.entities.enums.ContainerType;
+import archdesign.interactor.PackingPlan;
+import archdesign.interactor.UserConstraints;
+import archdesign.service.costing.ShippingCostStrategy;
 
 import java.util.ArrayList;
 import java.util.HashMap;

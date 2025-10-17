@@ -1,4 +1,4 @@
-package response;
+package archdesign.response;
 
 /**
  * A pure, read-only data object for Art display information.

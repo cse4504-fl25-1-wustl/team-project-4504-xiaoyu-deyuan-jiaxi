@@ -1,4 +1,4 @@
-package entities.enums;
+package archdesign.entities.enums;
 
 /**
  * Defines the types of boxes available for packing.

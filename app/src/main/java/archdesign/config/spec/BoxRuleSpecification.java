@@ -1,7 +1,7 @@
-package config.spec;
+package archdesign.config.spec;
 
-import entities.enums.BoxType;
-import entities.enums.Material;
+import archdesign.entities.enums.BoxType;
+import archdesign.entities.enums.Material;
 
 /**
  * Represents a single, immutable rule for packing an Art object into a Box.

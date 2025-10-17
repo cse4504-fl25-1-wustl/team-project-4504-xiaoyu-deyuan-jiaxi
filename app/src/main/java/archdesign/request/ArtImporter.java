@@ -1,9 +1,9 @@
-package request;
+package archdesign.request;
 
-import entities.Art;
-import entities.enums.Material;
-import parser.ArtDataParser;
-import parser.ArtDataRecord;
+import archdesign.entities.Art;
+import archdesign.entities.enums.Material;
+import archdesign.parser.ArtDataParser;
+import archdesign.parser.ArtDataRecord;
 
 import java.util.ArrayList;
 import java.util.List;

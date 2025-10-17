@@ -1,6 +1,6 @@
-package service;
+package archdesign.service;
 
-import entities.enums.ContainerType;
+import archdesign.entities.enums.ContainerType;
 
 /**
  * A simple, immutable data record to hold a valid container option.

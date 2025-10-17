@@ -1,12 +1,12 @@
-package service;
+package archdesign.service;
 
-import config.spec.BoxRuleSpecification;
-import config.spec.ContainerRuleSpecification;
-import entities.Art;
-import entities.Box;
-import entities.enums.BoxType;
-import entities.enums.ContainerType;
-import interactor.UserConstraints;
+import archdesign.config.spec.BoxRuleSpecification;
+import archdesign.config.spec.ContainerRuleSpecification;
+import archdesign.entities.Art;
+import archdesign.entities.Box;
+import archdesign.entities.enums.BoxType;
+import archdesign.entities.enums.ContainerType;
+import archdesign.interactor.UserConstraints;
 
 import java.util.ArrayList;
 //import java.util.Collections;

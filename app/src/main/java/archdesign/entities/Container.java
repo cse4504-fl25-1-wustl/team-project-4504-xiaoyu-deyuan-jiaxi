@@ -1,6 +1,6 @@
-package entities;
+package archdesign.entities;
 
-import entities.enums.ContainerType;
+import archdesign.entities.enums.ContainerType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
