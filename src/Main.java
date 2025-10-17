@@ -1,5 +1,4 @@
 import entities.Art;
-import entities.enums.Material;
 import entities.enums.ShippingProvider;
 import interactor.Packer;
 import interactor.PackingPlan;
@@ -12,7 +11,6 @@ import response.ContainerViewModel;
 import response.BoxViewModel;
 import response.ArtViewModel;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
