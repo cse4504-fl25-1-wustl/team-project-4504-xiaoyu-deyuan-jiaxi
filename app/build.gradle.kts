@@ -16,9 +16,14 @@ repositories {
 }
 
 dependencies {
-    // Use JUnit test framework.
-    testImplementation(libs.junit)
-
+    // JUnit Jupiter (JUnit 5) for testing
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    
+    // Mockito for mocking
+    testImplementation("org.mockito:mockito-core:5.8.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.8.0")
+    
     // This dependency is used by the application.
     implementation(libs.guava)
 }
@@ -35,8 +40,19 @@ application {
     mainClass = "archdesign.Main"
 }
 
-// temporarily disable test failure on no tests, need to be removed after tests are added
-tasks.test {
-    // Do not fail if there are no tests
-    failOnNoDiscoveredTests = false
+tasks.named<Test>("test") {
+    // Use JUnit Platform for unit tests.
+    useJUnitPlatform()
+    
+    // Show test results in console
+    testLogging {
+        events("passed", "skipped", "failed", "standardOut", "standardError")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+        
+        // Show standard output and error from tests
+        showStandardStreams = true
+    }
 }

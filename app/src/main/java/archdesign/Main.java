@@ -1,12 +1,11 @@
 package archdesign;
 
 import archdesign.entities.Art;
-import archdesign.entities.enums.Material;
 import archdesign.entities.enums.ShippingProvider;
 import archdesign.interactor.Packer;
 import archdesign.interactor.PackingPlan;
 import archdesign.interactor.UserConstraints;
-import archdesign.request.ArtImporter; // 确认使用 request 包
+import archdesign.request.ArtImporter; 
 import archdesign.parser.CsvParser;
 import archdesign.response.Response;
 import archdesign.response.ShipmentViewModel;
