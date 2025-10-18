@@ -19,8 +19,16 @@ dependencies {
     // Use JUnit test framework.
     testImplementation(libs.junit)
 
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.9.2")
+    testImplementation("org.mockito:mockito-core:5.3.1")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.3.1")
+    testImplementation("org.assertj:assertj-core:3.24.2")
+
     // This dependency is used by the application.
     implementation(libs.guava)
+    
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
@@ -37,6 +45,7 @@ application {
 
 // temporarily disable test failure on no tests, need to be removed after tests are added
 tasks.test {
+    useJUnitPlatform()
     // Do not fail if there are no tests
     failOnNoDiscoveredTests = false
 }
