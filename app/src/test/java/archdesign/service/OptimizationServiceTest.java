@@ -28,6 +28,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.atLeastOnce;
+
 @ExtendWith(MockitoExtension.class)
 class OptimizationServiceTest {
 
@@ -410,6 +416,31 @@ class OptimizationServiceTest {
             .mapToInt(box -> box.getArtsInBox().size())
             .sum();
         assertEquals(10, totalPackedArts);
+    }
+
+    //verify service interactions
+    @Test
+    void createOptimalPlan_VerifiesServiceInteractions() {
+        Art art1 = new Art("ART-1", 10, 10, 5, Material.GLASS);
+        Art art2 = new Art("ART-2", 10, 10, 5, Material.GLASS);
+        
+        PackingOption packingOption = new PackingOption(BoxType.STANDARD, 2);
+        when(feasibilityService.getValidPackingOptions(any(Art.class), any(UserConstraints.class)))
+            .thenReturn(List.of(packingOption));
+        
+        ContainerOption containerOption = new ContainerOption(ContainerType.GLASS_PALLET, 10);
+        when(feasibilityService.getValidContainerOptions(any(archdesign.entities.Box.class), any(UserConstraints.class)))
+            .thenReturn(List.of(containerOption));
+
+        when(costStrategy.calculateCost(any(archdesign.entities.Container.class))).thenReturn(50.0);
+
+        PackingPlan plan = optimizationService.createOptimalPlan(Arrays.asList(art1, art2), constraints);
+
+        assertNotNull(plan);
+        
+        verify(feasibilityService, atLeast(2)).getValidPackingOptions(any(Art.class), eq(constraints));
+        verify(feasibilityService, times(1)).getValidContainerOptions(any(archdesign.entities.Box.class), eq(constraints));
+        verify(costStrategy, times(1)).calculateCost(any(archdesign.entities.Container.class));
     }
 
 }
