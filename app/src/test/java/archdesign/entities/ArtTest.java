@@ -1,6 +1,6 @@
-package entities;
+package archdesign.entities;
 
-import entities.enums.Material;
+import archdesign.entities.enums.Material;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
