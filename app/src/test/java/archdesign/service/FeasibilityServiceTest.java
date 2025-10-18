@@ -1,15 +1,15 @@
-package service;
+package archdesign.service;
 
-import config.RuleProvider;
+import archdesign.config.RuleProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import config.RuleProvider;
-import config.spec.BoxRuleSpecification;
-import config.spec.ContainerRuleSpecification;
-import entities.Art;
-import entities.enums.Material;
-import interactor.UserConstraints;
+import archdesign.config.RuleProvider;
+import archdesign.config.spec.BoxRuleSpecification;
+import archdesign.config.spec.ContainerRuleSpecification;
+import archdesign.entities.Art;
+import archdesign.entities.enums.Material;
+import archdesign.interactor.UserConstraints;
 import java.util.*;
 
 public class FeasibilityServiceTest {
