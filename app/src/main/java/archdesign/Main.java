@@ -1,7 +1,6 @@
 package archdesign;
 
 import archdesign.entities.Art;
-import archdesign.entities.enums.Material;
 import archdesign.entities.enums.ShippingProvider;
 import archdesign.interactor.Packer;
 import archdesign.interactor.PackingPlan;
@@ -14,7 +13,6 @@ import archdesign.response.ContainerViewModel;
 import archdesign.response.BoxViewModel;
 import archdesign.response.ArtViewModel;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**

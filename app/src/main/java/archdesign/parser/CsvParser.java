@@ -35,8 +35,18 @@ public class CsvParser implements ArtDataParser {
                     String finalMedium = values[3].trim();
                     int width = Integer.parseInt(values[4].trim());
                     int height = Integer.parseInt(values[5].trim());
+                    
+                    // Extract Glazing column (index 6) if it exists
+                    String glazing = "";
+                    if (values.length > 6) {
+                        glazing = values[6].trim();
+                    }
+                    
+                    // Combine finalMedium and glazing for material detection
+                    // We'll concatenate them with a space for easier fuzzy matching later
+                    String combinedMaterialInfo = finalMedium + " " + glazing;
 
-                    records.add(new ArtDataRecord(quantity, tagNumber, finalMedium, width, height));
+                    records.add(new ArtDataRecord(quantity, tagNumber, combinedMaterialInfo, width, height));
                 } catch (NumberFormatException e) {
                     System.err.println("Warning: Could not parse a number on line: " + line + ". Skipping.");
                 }

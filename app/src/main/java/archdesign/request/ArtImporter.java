@@ -39,12 +39,9 @@ public class ArtImporter {
                 // We combine the tag number with a unique counter for clarity.
                 String uniqueId = "Tag" + record.tagNumber() + "-Item" + (i + 1);
                 
-                // Map the string from the file to our Material enum.
-                Material material = Material.fromString(record.finalMedium());
+                // Fuzzy match material from combined material info
+                Material material = fuzzyMatchMaterial(record.finalMedium());
                 if (material == Material.UNKNOWN) {
-                    // It's good practice to try to infer the material if possible,
-                    // e.g., from the "Glazing" column in your sample.
-                    // For now, we'll just log a warning.
                     System.out.println("Warning: Unknown material '" + record.finalMedium() + "' for " + uniqueId);
                 }
 
@@ -53,5 +50,68 @@ public class ArtImporter {
         }
 
         return arts;
+    }
+    
+    /**
+     * Performs fuzzy matching to determine material type based on keywords.
+     * The combined material info from both "Final medium" and "Glazing" columns
+     * is searched for specific keywords to identify the material.
+     * 
+     * @param materialInfo Combined string from finalMedium and glazing columns
+     * @return The matched Material enum, or Material.UNKNOWN if no match
+     */
+    private Material fuzzyMatchMaterial(String materialInfo) {
+        if (materialInfo == null || materialInfo.trim().isEmpty()) {
+            return Material.UNKNOWN;
+        }
+        
+        // Convert to lowercase for case-insensitive matching
+        String lowerInfo = materialInfo.toLowerCase();
+        
+        // Check for each material type using fuzzy/substring matching
+        // Order matters: check more specific terms first
+        
+        // Check for framed canvas types first (more specific)
+        if (lowerInfo.contains("canvas") && lowerInfo.contains("framed")) {
+            return Material.CANVAS_FRAMED;
+        }
+        if (lowerInfo.contains("canvas") && lowerInfo.contains("gallery")) {
+            return Material.CANVAS_GALLERY;
+        }
+        
+        // Check for acoustic panel types
+        if (lowerInfo.contains("acoustic") && lowerInfo.contains("framed")) {
+            return Material.ACOUSTIC_PANEL_FRAMED;
+        }
+        if (lowerInfo.contains("acoustic")) {
+            return Material.ACOUSTIC_PANEL;
+        }
+        
+        // Check for patient board
+        if (lowerInfo.contains("patient") && lowerInfo.contains("board")) {
+            return Material.PATIENT_BOARD;
+        }
+        
+        // Check for mirror
+        if (lowerInfo.contains("mirror")) {
+            return Material.MIRROR;
+        }
+        
+        // Check for acrylic (before glass, as acrylic might be mentioned with glass)
+        if (lowerInfo.contains("acrylic") || lowerInfo.contains("plexiglass") || lowerInfo.contains("plexi")) {
+            return Material.ACRYLIC;
+        }
+        
+        // Check for glass (most common, check last among materials)
+        if (lowerInfo.contains("glass")) {
+            return Material.GLASS;
+        }
+        
+        // Check for general canvas (after specific types)
+        if (lowerInfo.contains("canvas")) {
+            return Material.CANVAS_FRAMED; // Default to framed if no other qualifier
+        }
+        
+        return Material.UNKNOWN;
     }
 }

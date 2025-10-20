@@ -16,19 +16,22 @@ repositories {
 }
 
 dependencies {
-    // Use JUnit test framework.
-    testImplementation(libs.junit)
-
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
+    // JUnit Jupiter (JUnit 5) for testing
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.9.2")
-    testImplementation("org.mockito:mockito-core:5.3.1")
-    testImplementation("org.mockito:mockito-junit-jupiter:5.3.1")
-    testImplementation("org.assertj:assertj-core:3.24.2")
-
+    
+    // Mockito for mocking
+    testImplementation("org.mockito:mockito-core:5.8.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.8.0")
+    
+    // Apache Commons Math for optimization algorithms
+    implementation("org.apache.commons:commons-math3:3.6.1")
+    
+    // Google OR-Tools for constraint programming and optimization
+    implementation("com.google.ortools:ortools-java:9.8.3296")
+    
     // This dependency is used by the application.
     implementation(libs.guava)
-    
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
@@ -43,9 +46,15 @@ application {
     mainClass = "archdesign.Main"
 }
 
-// temporarily disable test failure on no tests, need to be removed after tests are added
-tasks.test {
+tasks.named<Test>("test") {
     useJUnitPlatform()
-    // Do not fail if there are no tests
-    failOnNoDiscoveredTests = false
+    
+    testLogging {
+        events("passed", "skipped", "failed", "standardOut", "standardError")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+        showStandardStreams = true
+    }
 }
