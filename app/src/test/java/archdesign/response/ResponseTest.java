@@ -146,4 +146,48 @@ public class ResponseTest {
         // Check precision/rounding: ensure small cost preserved precisely within double tolerance
         assertEquals(0.123456, vm.totalCost(), 1e-9);
     }
+
+    @Test
+    public void generateViewModel_largeWeights_doNotOverflow_andAggregate() {
+        // Very large art dimensions to create large weight values
+        Art largeArt = new Art("large", 100000, 100000, 1, Material.MIRROR);
+
+        Box bigBox = new Box("bb", BoxType.CRATE, BoxType.CRATE.getWidth(), BoxType.CRATE.getLength(), BoxType.CRATE.getMinHeight());
+        bigBox.addArt(largeArt);
+
+        Container bigContainer = new Container("bigc", ContainerType.STANDARD_CRATE, ContainerType.STANDARD_CRATE.getWidth(), ContainerType.STANDARD_CRATE.getLength(), ContainerType.STANDARD_CRATE.getMinHeight(), ContainerType.STANDARD_CRATE.getWeight(), ContainerType.STANDARD_CRATE.getBaseHeight());
+        bigContainer.addBox(bigBox);
+
+        PackingPlan plan = new PackingPlan(List.of(bigContainer), 9999999.99);
+
+        ShipmentViewModel vm = new Response(plan).generateViewModel();
+        assertNotNull(vm);
+
+        // verify totals equal plan totals and no NaN/Infinite
+        assertTrue(Double.isFinite(vm.totalWeight()), "total weight should be a finite number");
+        assertEquals(plan.getTotalWeight(), vm.totalWeight(), 1e-6);
+    }
+
+    @Test
+    public void generateViewModel_perArtWeightUsesCeil_fractionalBehavior() {
+        // Use a material and dimensions that produce a fractional weight per art
+        // e.g., weightFactor * area = fractional value
+        Art artA = new Art("aA", 3, 3, 1, Material.ACOUSTIC_PANEL); // 9 * 0.0038 = 0.0342 -> ceil -> 1.0
+        Art artB = new Art("aB", 1, 1, 1, Material.ACOUSTIC_PANEL); // 1 * 0.0038 = 0.0038 -> ceil -> 1.0
+
+        Box box = new Box("bf", BoxType.STANDARD, BoxType.STANDARD.getWidth(), BoxType.STANDARD.getLength(), BoxType.STANDARD.getMinHeight());
+        box.addArt(artA);
+        box.addArt(artB);
+
+        Container c = new Container("cceil", ContainerType.STANDARD_PALLET, ContainerType.STANDARD_PALLET.getWidth(), ContainerType.STANDARD_PALLET.getLength(), ContainerType.STANDARD_PALLET.getMinHeight(), ContainerType.STANDARD_PALLET.getWeight(), ContainerType.STANDARD_PALLET.getBaseHeight());
+        c.addBox(box);
+
+        PackingPlan plan = new PackingPlan(List.of(c), 0.0);
+        ShipmentViewModel vm = new Response(plan).generateViewModel();
+        // Both arts individually round up to 1.0 by Art constructor's ceil logic, so box total is 2.0
+    // Both arts individually round up to 1.0 by Art constructor's ceil logic, so box total is 2.0
+    assertEquals(2.0, box.getTotalWeight(), 1e-9);
+    // More direct check: plan's total weight should match vm's total weight
+    assertEquals(plan.getTotalWeight(), vm.totalWeight(), 1e-9);
+    }
 }
