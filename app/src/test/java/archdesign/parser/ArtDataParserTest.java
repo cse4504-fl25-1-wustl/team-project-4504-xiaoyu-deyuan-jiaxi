@@ -13,4 +13,12 @@ public class ArtDataParserTest {
 		List<ArtDataRecord> out = p.parse("");
 		assertNotNull(out);
 	}
+
+	@Test
+	void parseEmptyPathReturnsEmptyList() {
+		ArtDataParser p = new CsvParser();
+		List<ArtDataRecord> out = p.parse("");
+		assertNotNull(out);
+		assertTrue(out.isEmpty() || out.size() == 0);
+	}
 }

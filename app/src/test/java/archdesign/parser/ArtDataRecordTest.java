@@ -15,4 +15,20 @@ public class ArtDataRecordTest {
 		assertEquals(30, r.width());
 		assertEquals(40, r.height());
 	}
+
+	@Test
+	void recordsWithSameValuesAreEqualAndHaveSameHash() {
+		ArtDataRecord a = new ArtDataRecord(2, "ID", "Medium", 10, 20);
+		ArtDataRecord b = new ArtDataRecord(2, "ID", "Medium", 10, 20);
+
+		assertEquals(a, b);
+		assertEquals(a.hashCode(), b.hashCode());
+	}
+
+	@Test
+	void toStringIsNonEmpty() {
+		ArtDataRecord a = new ArtDataRecord(1, "X", "M", 1, 1);
+		assertNotNull(a.toString());
+		assertFalse(a.toString().isEmpty());
+	}
 }
