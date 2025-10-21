@@ -14,7 +14,7 @@ public class Art {
         this.height = height;
         this.width = width;
         this.material = material;
-        this.weight = height * width * (double)material.getWeight();
+        this.weight = (int) Math.ceil(height * width * (double)material.getWeight());
     }
 
     public String getId() {
