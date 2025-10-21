@@ -35,34 +35,35 @@ public class Main {
         
         System.out.println("--- Starting Packer Process for file: " + filePath + " ---");
 
-        // --- "IN" PART ---
-        // 1. Create the importer (request), giving it a specific parser.
-        ArtImporter importer = new ArtImporter(new CsvParser());
+        ShipmentViewModel viewModel = processFile(filePath);
 
-        // 2. Run the import process to get a list of Art objects.
+        // display on console
+        System.out.println("\n--- Displaying Packing Plan ---");
+        displayViewModel(viewModel);
+    }
+
+    /**
+     * Public helper used by tests and the CLI: process the given CSV file and
+     * return the generated ShipmentViewModel.
+     * @param filePath path to CSV file
+     * @return ShipmentViewModel (may be null)
+     */
+    public static ShipmentViewModel processFile(String filePath) {
+        // --- "IN" PART ---
+        ArtImporter importer = new ArtImporter(new CsvParser());
         List<Art> artsToPack = importer.importFromFile(filePath);
         System.out.println("Successfully imported " + artsToPack.size() + " total art items.");
 
-
         // --- "CORE" PART ---
-        // 3. Define the constraints and strategies for this packing run.
         UserConstraints constraints = new UserConstraints();
         ShippingProvider provider = ShippingProvider.PLACEHOLDER;
-
-        // 4. Call the Packer with the imported list of arts.
         System.out.println("\n--- Running Packer Algorithm... ---");
         PackingPlan finalPlan = Packer.pack(artsToPack, constraints, provider);
 
-
         // --- "OUT" PART ---
-        // 5. Use the Response layer to transform the plan into a view model.
         System.out.println("\n--- Generating Response ViewModel... ---");
         Response response = new Response(finalPlan);
-        ShipmentViewModel viewModel = response.generateViewModel();
-        
-        // 6. Use the frontend (this Main class) to display the view model.
-        System.out.println("\n--- Displaying Packing Plan ---");
-        displayViewModel(viewModel);
+        return response.generateViewModel();
     }
 
     /**

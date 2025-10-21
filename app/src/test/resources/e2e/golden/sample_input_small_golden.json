@@ -1,0 +1,49 @@
+{
+  "totalWeight": 63.0,
+  "totalCost": 630.0,
+  "totalContainers": 1,
+  "totalBoxes": 1,
+  "containers": [
+    {
+      "id": "Container-1",
+      "type": "STANDARD_PALLET",
+      "length": 48,
+      "width": 40,
+      "currentHeight": 31,
+      "weight": 63.0,
+      "boxes": [
+        {
+          "id": "Box-1",
+          "type": "STANDARD",
+          "length": 37,
+          "width": 11,
+          "currentHeight": 31,
+          "weight": 3.0,
+          "arts": [
+            {
+              "id": "TagINV1-Item1",
+              "width": 10,
+              "height": 10,
+              "material": "Glass",
+              "weight": 1.0
+            },
+            {
+              "id": "TagINV2-Item1",
+              "width": 5,
+              "height": 5,
+              "material": "Acrylic",
+              "weight": 1.0
+            },
+            {
+              "id": "TagINV2-Item2",
+              "width": 5,
+              "height": 5,
+              "material": "Acrylic",
+              "weight": 1.0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
