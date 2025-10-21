@@ -9,6 +9,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
+import java.nio.file.Files;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,6 +41,12 @@ public class IntegrationTest {
         Set<String> vmArtIds = new HashSet<>();
         vm.containers().forEach(c -> c.boxes().forEach(b -> b.arts().forEach(a -> vmArtIds.add(a.id()))));
 
+    // Ensure unique art ids (quantity expansion produced distinct entries)
+    int flattenedCount = vm.containers().stream()
+        .mapToInt(c -> c.boxes().stream().mapToInt(b -> b.arts().size()).sum())
+        .sum();
+    assertEquals(flattenedCount, vmArtIds.size(), "Art ids should be unique after expansion");
+
         // Expected input art ids (after quantity expansion)
         Set<String> expected = Set.of(
                 "TagINV1-Item1",
@@ -48,6 +55,17 @@ public class IntegrationTest {
         );
 
         assertTrue(vmArtIds.containsAll(expected), "VM must contain all expected art ids");
+
+        // Basic consistency: totalWeight reported should equal the sum of container weights
+        double sumContainerWeights = vm.containers().stream().mapToDouble(c -> c.weight()).sum();
+        assertEquals(vm.totalWeight(), sumContainerWeights, 1e-6, "Total weight must equal sum of container weights");
+
+        // Cross-check against golden CSV to ensure exact layout (more strict)
+        Path golden = resourcePath("golden/sample_input_small_golden.csv");
+        String goldenCsv = Files.readString(golden).replace("\r\n", "\n").trim();
+        // Build actual CSV from view model same as other golden test helper
+        String actual = archdesign.e2e.testutils.ViewModelCsv.toCsv(vm).replace("\r\n", "\n").trim();
+        assertEquals(goldenCsv, actual, "Small sample should match golden CSV output");
     }
 
     @Test
@@ -67,5 +85,26 @@ public class IntegrationTest {
         if (hasArts) {
             assertTrue(vm.totalContainers() > 0);
         }
+
+        // Additional consistency checks for large sample
+        // 1) Each art should have a positive weight and sensible dimensions
+        vm.containers().forEach(c -> c.boxes().forEach(b -> b.arts().forEach(a -> {
+            assertNotNull(a.id());
+            assertTrue(a.width() > 0, "Art width must be positive");
+            assertTrue(a.height() > 0, "Art height must be positive");
+            assertTrue(Double.isFinite(a.weight()), "Art weight must be finite");
+            assertTrue(a.weight() > 0, "Art weight must be positive");
+        })));
+
+        // 2) IDs should follow the generated pattern (Tag<xx>-Item<yy>)
+        vm.containers().forEach(c -> c.boxes().forEach(b -> b.arts().forEach(a -> {
+            assertTrue(a.id().matches("Tag\\w+-Item\\d+"), "Art id should follow Tag<id>-Item<n> pattern");
+        })));
+
+        // 3) Verify the reported total boxes/containers equal the flattened counts
+        int countedBoxes = vm.containers().stream().mapToInt(c -> c.boxes().size()).sum();
+        assertEquals(vm.totalBoxes(), countedBoxes, "totalBoxes must equal the actual number of boxes");
+        int countedContainers = vm.containers().size();
+        assertEquals(vm.totalContainers(), countedContainers, "totalContainers must equal the actual number of containers");
     }
 }
