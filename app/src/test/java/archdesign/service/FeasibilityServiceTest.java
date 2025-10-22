@@ -1,18 +1,39 @@
 package archdesign.service;
 
+import archdesign.config.spec.BoxRuleSpecification;
+import archdesign.config.spec.ContainerRuleSpecification;
 import archdesign.config.RuleProvider;
+import archdesign.interactor.UserConstraints;
+import archdesign.service.FeasibilityService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import archdesign.config.spec.BoxRuleSpecification;
-import archdesign.config.spec.ContainerRuleSpecification;
+
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
 import archdesign.entities.Art;
 import archdesign.entities.Box;
 import archdesign.entities.enums.Material;
-import archdesign.entities.enums.BoxType;
-import archdesign.entities.enums.ContainerType;
 import archdesign.interactor.UserConstraints;
 import java.util.*;
+
+import archdesign.config.RuleProvider;
+import archdesign.config.spec.BoxRuleSpecification;
+import archdesign.config.spec.ContainerRuleSpecification;
+import archdesign.entities.Art;
+import archdesign.entities.enums.Material;
+import archdesign.interactor.UserConstraints;
+import archdesign.service.FeasibilityService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.Collections;
+import java.util.List;
 
 public class FeasibilityServiceTest {
 
