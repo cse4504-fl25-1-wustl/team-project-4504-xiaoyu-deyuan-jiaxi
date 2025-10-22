@@ -1,0 +1,53 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
+
+name: Java CI with Gradle
+
+on:
+  # 1. Manual trigger
+  workflow_dispatch:
+  
+  # 2. When a pull request is approved for merging to main
+  pull_request_review:
+    types: [submitted]
+    branches:
+      - main
+  
+  # 3. When anything is pushed to main
+  push:
+    branches:
+      - main
+
+jobs:
+  tests:
+
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      github.event_name == 'push' || 
+      (github.event_name == 'pull_request_review' && github.event.review.state == 'approved')
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Run tests with gradle
+      run: ./gradlew test
+
+    - name: Upload Test Report
+      if: always()  # Upload report even if tests fail
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-report
+        path: app/build/reports/tests/test/
+        retention-days: 30
