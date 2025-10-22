@@ -2,9 +2,15 @@ package archdesign;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import archdesign.response.ArtViewModel;
+import archdesign.response.BoxViewModel;
+import archdesign.response.ContainerViewModel;
 import archdesign.response.ShipmentViewModel;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.Method;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 class MainTest {
@@ -38,5 +44,37 @@ class MainTest {
             System.setOut(origOut);
             System.setErr(origErr);
         }
+    }
+    @Test
+    void displayViewModel_printsExpectedSummaryAndDetails() throws Exception {
+        ArtViewModel art = new ArtViewModel("A1", 10, 20, "glass", 5.5);
+        BoxViewModel box = new BoxViewModel("B1", "SMALL", 10, 10, 5, 6.5, List.of(art));
+        ContainerViewModel container = new ContainerViewModel("C1", "STANDARD", 48, 40, 96, 12.0, List.of(box));
+
+        ShipmentViewModel vm = new ShipmentViewModel(
+            17.5, // totalWeight
+            99.99, // totalCost
+            1, // totalContainers
+            1, // totalBoxes
+            List.of(container)
+        );
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        System.setOut(new PrintStream(out));
+
+        try {
+           
+            Method m = Main.class.getDeclaredMethod("displayViewModel", ShipmentViewModel.class);
+            m.setAccessible(true);
+            m.invoke(null, vm);
+        } finally {
+            System.setOut(originalOut);
+        }
+
+        String printed = out.toString();
+        assertTrue(printed.contains("Total Estimated Cost: $99.99"), "should print total cost");
+        assertTrue(printed.contains("-> Container: C1"), "should print container id");
+        assertTrue(printed.contains("- Art: A1"), "should print art details");
     }
 }
