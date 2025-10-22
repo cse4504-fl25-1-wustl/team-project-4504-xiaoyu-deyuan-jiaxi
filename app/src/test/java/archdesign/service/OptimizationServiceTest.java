@@ -447,4 +447,52 @@ class OptimizationServiceTest {
         verify(costStrategy, times(1)).calculateCost(any(archdesign.entities.Container.class));
     }
 
+    // when two container types exist, optimizer should prefer the one with lower container weight
+    @Test
+    void createOptimalPlan_PrefersLowerWeightContainerType() {
+        Art art = new Art("ART-1", 10, 10, 5, Material.GLASS);
+        PackingOption packingOption = new PackingOption(BoxType.STANDARD, 1);
+        when(feasibilityService.getValidPackingOptions(eq(art), any(UserConstraints.class)))
+            .thenReturn(List.of(packingOption));
+
+        // Two container options: one heavy, one light
+        ContainerOption heavy = new ContainerOption(ContainerType.STANDARD_CRATE, 10); // heavier type
+        ContainerOption light = new ContainerOption(ContainerType.GLASS_PALLET, 10); // lighter type
+        when(feasibilityService.getValidContainerOptions(any(archdesign.entities.Box.class), any(UserConstraints.class)))
+            .thenReturn(Arrays.asList(heavy, light));
+
+        // costStrategy returns distinct costs per container instance
+        when(costStrategy.calculateCost(any(archdesign.entities.Container.class)))
+            .thenReturn(200.0) // for heavy
+            .thenReturn(100.0); // for light
+
+        PackingPlan plan = optimizationService.createOptimalPlan(List.of(art), constraints);
+        assertNotNull(plan);
+        assertEquals(1, plan.getContainers().size());
+        // The chosen container should be the lighter one per optimizer objective
+        archdesign.entities.Container chosen = plan.getContainers().get(0);
+        assertEquals(ContainerType.GLASS_PALLET, chosen.getContainerType());
+    }
+
+    // optimizer minimizes container weight but reported total cost comes from costStrategy
+    @Test
+    void createOptimalPlan_TotalCostUsesCostStrategy() {
+        Art art = new Art("ART-1", 10, 10, 5, Material.GLASS);
+        PackingOption packingOption = new PackingOption(BoxType.STANDARD, 1);
+        when(feasibilityService.getValidPackingOptions(eq(art), any(UserConstraints.class)))
+            .thenReturn(List.of(packingOption));
+
+        ContainerOption option = new ContainerOption(ContainerType.GLASS_PALLET, 10);
+        when(feasibilityService.getValidContainerOptions(any(archdesign.entities.Box.class), any(UserConstraints.class)))
+            .thenReturn(List.of(option));
+
+        // costStrategy returns 123.45 for this container
+        when(costStrategy.calculateCost(any(archdesign.entities.Container.class))).thenReturn(123.45);
+
+        PackingPlan plan = optimizationService.createOptimalPlan(List.of(art), constraints);
+        assertNotNull(plan);
+        assertEquals(1, plan.getContainers().size());
+        assertEquals(123.45, plan.getTotalCost());
+    }
+
 }

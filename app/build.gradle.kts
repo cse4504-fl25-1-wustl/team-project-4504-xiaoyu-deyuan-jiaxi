@@ -8,6 +8,8 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     application
+    // Code coverage
+    id("jacoco")
 }
 
 repositories {
@@ -59,4 +61,19 @@ tasks.named<Test>("test") {
         showStackTraces = true
         showStandardStreams = true
     }
+}
+
+jacoco {
+    toolVersion = "0.8.10"
+}
+
+tasks.named<JacocoReport>("jacocoTestReport") {
+    dependsOn(tasks.named("test"))
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+    classDirectories.setFrom(files(listOf(fileTree("${project.buildDir}/classes/java/main"))))
+    sourceDirectories.setFrom(files(listOf(file("src/main/java"))))
+    executionData.setFrom(files("${project.buildDir}/jacoco/test.exec"))
 }
