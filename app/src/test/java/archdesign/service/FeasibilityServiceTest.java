@@ -6,6 +6,12 @@ import archdesign.config.RuleProvider;
 import archdesign.interactor.UserConstraints;
 import archdesign.service.FeasibilityService;
 
+import archdesign.entities.Art;
+import archdesign.entities.enums.BoxType;
+import archdesign.entities.enums.ContainerType;
+import archdesign.entities.enums.Material;
+
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -170,5 +176,124 @@ public class FeasibilityServiceTest {
         var validOptions = feasibilityService.getValidPackingOptions(art, constraints);
         assertNotNull(validOptions, "Returned packing options should not be null");
         assertTrue(validOptions.isEmpty(), "Oversized art should not have any valid packing options");
+    }
+
+     @Test
+    void getValidPackingOptions_materialMismatch_returnsEmpty() {
+        BoxRuleSpecification rule = BoxRuleSpecification.newBuilder("glass-rule", BoxType.STANDARD, 1)
+                .forMaterial(Material.GLASS)
+                .withMinWidth(1)
+                .withMaxWidth(100)
+                .withMinHeight(1)
+                .withMaxHeight(100)
+                .build();
+
+        FeasibilityService svc = new FeasibilityService(List.of(rule), List.of());
+
+        Art art = new Art("A1", 10, 10, 1, Material.ACRYLIC);
+        UserConstraints constraints = UserConstraints.newBuilder().build();
+
+        List<PackingOption> opts = svc.getValidPackingOptions(art, constraints);
+        assertTrue(opts.isEmpty(), "Material mismatch should yield no packing options");
+    }
+
+    @Test
+    void getValidPackingOptions_sizeBoundary_inclusiveMatch() {
+        BoxRuleSpecification rule = BoxRuleSpecification.newBuilder("size-rule", BoxType.STANDARD, 2)
+                .withMinWidth(10)
+                .withMaxWidth(20)
+                .withMinHeight(5)
+                .withMaxHeight(15)
+                .build();
+
+        FeasibilityService svc = new FeasibilityService(List.of(rule), List.of());
+
+        // width equals maxWidth and height equals minHeight -> should match (widthMatches || heightMatches)
+        Art art = new Art("A2", 5, 20, 1, Material.CANVAS_GALLERY);
+        UserConstraints constraints = UserConstraints.newBuilder().build();
+
+        List<PackingOption> opts = svc.getValidPackingOptions(art, constraints);
+        assertFalse(opts.isEmpty(), "Boundary sizes should be matched inclusively");
+        assertEquals(BoxType.STANDARD, opts.get(0).boxType());
+    }
+
+    @Test
+    void getValidContainerOptions_respectsUserConstraints_allowedListFiltering() {
+        ContainerRuleSpecification cr1 = ContainerRuleSpecification.newBuilder("cr1")
+                .forContainerType(ContainerType.STANDARD_PALLET)
+                .withAllowedBoxType(BoxType.STANDARD)
+                .withCapacity(10)
+                .build();
+
+        ContainerRuleSpecification cr2 = ContainerRuleSpecification.newBuilder("cr2")
+                .forContainerType(ContainerType.STANDARD_CRATE)
+                .withAllowedBoxType(BoxType.STANDARD)
+                .withCapacity(5)
+                .build();
+
+        FeasibilityService svc = new FeasibilityService(List.of(), List.of(cr1, cr2));
+
+        // Create a box of STANDARD type
+        archdesign.entities.Box box = new archdesign.entities.Box("b1", BoxType.STANDARD, 10, 10, 1);
+
+        // Constrain to only STANDARD_CRATE
+        UserConstraints constraints = UserConstraints.newBuilder()
+                .withAllowedContainerTypes(List.of(ContainerType.STANDARD_CRATE))
+                .build();
+
+        List<ContainerOption> opts = svc.getValidContainerOptions(box, constraints);
+        assertEquals(1, opts.size());
+        assertEquals(ContainerType.STANDARD_CRATE, opts.get(0).containerType());
+    }
+
+    @Test
+    void getValidPackingOptions_matchesRuleAndRespectsConstraints() {
+        // Rule: Glass art between width 5..15 or height 5..15 -> STANDARD box capacity 1
+        BoxRuleSpecification rule = BoxRuleSpecification.newBuilder("r1", BoxType.STANDARD, 1)
+                .forMaterial(Material.GLASS)
+                .withMinWidth(5)
+                .withMaxWidth(15)
+                .withMinHeight(5)
+                .withMaxHeight(15)
+                .build();
+
+        FeasibilityService svc = new FeasibilityService(List.of(rule), List.of());
+
+        Art matching = new Art("G1", 10, 10, 1, Material.GLASS);
+        UserConstraints allAllowed = new UserConstraints();
+
+        List<PackingOption> options = svc.getValidPackingOptions(matching, allAllowed);
+        assertFalse(options.isEmpty());
+        assertEquals(BoxType.STANDARD, options.get(0).boxType());
+
+        // Constraint: restrict allowed box types to empty list (none) -> returns none
+        UserConstraints restrict = UserConstraints.newBuilder().withAllowedBoxTypes(List.of()).build();
+    // allowedBoxTypes empty in builder means all allowed; to simulate restriction, pass a list that doesn't include STANDARD
+        UserConstraints restrict2 = UserConstraints.newBuilder().withAllowedBoxTypes(List.of(BoxType.LARGE)).build();
+        List<PackingOption> options3 = svc.getValidPackingOptions(matching, restrict2);
+        assertTrue(options3.isEmpty(), "No options when user constraints disallow the rule's box type");
+    }
+
+    @Test
+    void getValidContainerOptions_mapsBoxTypeToContainerRulesAndRespectsConstraints() {
+        ContainerRuleSpecification cr = ContainerRuleSpecification.newBuilder("c1")
+                .forContainerType(ContainerType.STANDARD_PALLET)
+                .withAllowedBoxType(BoxType.STANDARD)
+                .withCapacity(10)
+                .build();
+
+        FeasibilityService svc = new FeasibilityService(List.of(), List.of(cr));
+
+        Box box = new Box("B1", BoxType.STANDARD, 10, 20, 5);
+        UserConstraints allAllowed = new UserConstraints();
+
+        List<ContainerOption> opts = svc.getValidContainerOptions(box, allAllowed);
+        assertFalse(opts.isEmpty());
+        assertEquals(ContainerType.STANDARD_PALLET, opts.get(0).containerType());
+
+        // Restrict container types to none that match
+        UserConstraints restrict = UserConstraints.newBuilder().withAllowedContainerTypes(List.of(ContainerType.OVERSIZE_PALLET)).build();
+        List<ContainerOption> opts2 = svc.getValidContainerOptions(box, restrict);
+        assertTrue(opts2.isEmpty());
     }
 }
