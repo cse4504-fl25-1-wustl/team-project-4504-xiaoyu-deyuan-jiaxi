@@ -5,7 +5,7 @@ import archdesign.entities.enums.ShippingProvider;
 import archdesign.interactor.Packer;
 import archdesign.interactor.PackingPlan;
 import archdesign.interactor.UserConstraints;
-import archdesign.request.ArtImporter; // 确认使用 request 包
+import archdesign.request.ArtImporter;
 import archdesign.parser.CsvParser;
 import archdesign.response.Response;
 import archdesign.response.ShipmentViewModel;
@@ -76,15 +76,16 @@ public class Main {
             System.out.println("No containers were used. The packing plan is empty.");
             return;
         }
+    // The frontend is responsible for all formatting and display choices.
+    System.out.println("--- Shipment Plan Summary ---");
+    System.out.println("Total Estimated Cost: $" + String.format("%.2f", viewModel.totalCost()));
+    System.out.println("Total Weight: " + String.format("%.2f", viewModel.totalWeight()) + " lbs");
+    System.out.println("Total Containers: " + viewModel.totalContainers());
+    System.out.println("Total Boxes: " + viewModel.totalBoxes());
+    System.out.println("------------------------------------");
 
-        // The frontend is responsible for all formatting and display choices.
-        System.out.println("--- Shipment Plan Summary ---");
-        System.out.println("Total Estimated Cost: $" + String.format("%.2f", viewModel.totalCost()));
-        System.out.println("Total Weight: " + String.format("%.2f", viewModel.totalWeight()) + " lbs");
-        System.out.println("Total Containers: " + viewModel.totalContainers());
-        System.out.println("Total Boxes: " + viewModel.totalBoxes());
-        System.out.println("------------------------------------");
-
+    // Gather all arts across the shipment so we can compute the requested work-order summary
+    var allArts = new java.util.ArrayList<archdesign.response.ArtViewModel>();
         for (ContainerViewModel container : viewModel.containers()) {
             String containerDims = String.format("%dx%dx%d", container.length(), container.width(), container.currentHeight());
             System.out.println(
@@ -106,6 +107,8 @@ public class Main {
 
                 // This section now displays all the detailed art info from the ArtViewModel.
                 for (ArtViewModel art : box.arts()) {
+                    // collect art for summary calculations
+                    allArts.add(art);
                     System.out.println(
                         "       - Art: " + art.id() +
                         " | Material: " + art.material() +
@@ -116,5 +119,57 @@ public class Main {
             }
             System.out.println(); // Add a blank line for readability
         }
+
+        // --- Work Order Summary ---
+        // Compute totals and group oversized pieces
+        int totalPieces = allArts.size();
+        double totalArtworkWeight = 0.0;
+        java.util.Map<String, OversizeGroup> oversizeMap = new java.util.LinkedHashMap<>();
+        int standardPieces = 0;
+
+        for (archdesign.response.ArtViewModel art : allArts) {
+            totalArtworkWeight += art.weight();
+            boolean isOversized = art.width() > 44 || art.height() > 44;
+            if (!isOversized) {
+                standardPieces++;
+            } else {
+                String dims = art.width() + "\" x " + art.height() + "\""; // e.g. 46" x 34"
+                OversizeGroup g = oversizeMap.get(dims);
+                if (g == null) {
+                    g = new OversizeGroup(art.width(), art.height());
+                    oversizeMap.put(dims, g);
+                }
+                g.add(art.weight());
+            }
+        }
+
+        double finalShipmentWeight = viewModel.totalWeight();
+        double totalPackagingWeight = finalShipmentWeight - totalArtworkWeight;
+
+        System.out.println("Work Order Summary:");
+        System.out.println("- Total Pieces: " + totalPieces);
+        System.out.println("- Standard Size Pieces: " + standardPieces);
+        System.out.println("- Oversized Pieces: " + oversizeMap.values().stream().mapToInt(g->g.qty).sum());
+        if (!oversizeMap.isEmpty()) {
+            for (var entry : oversizeMap.entrySet()) {
+                OversizeGroup g = entry.getValue();
+                System.out.println("   * " + entry.getKey() + " (Qty: " + g.qty + ") = " + String.format("%.0f", g.totalWeight) + " lbs");
+            }
+        }
+
+        System.out.println();
+        System.out.println("Total Artwork Weight: " + String.format("%.0f", totalArtworkWeight) + " lbs");
+        System.out.println("Total Packaging Weight: " + String.format("%.0f", totalPackagingWeight) + " lbs");
+        System.out.println("Final Shipment Weight: " + String.format("%.0f", finalShipmentWeight) + " lbs");
+    }
+
+    // small helper to group oversize pieces
+    private static class OversizeGroup {
+        final int w;
+        final int h;
+        int qty = 0;
+        double totalWeight = 0.0;
+        OversizeGroup(int w, int h) { this.w = w; this.h = h; }
+        void add(double weight) { qty++; totalWeight += weight; }
     }
 }
