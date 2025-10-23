@@ -19,8 +19,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 优化服务 - 直接优化Container类型的选择
- * 目标：最小化总重量（container重量 + arts重量）
+ * Optimization service - directly optimize selection of Container types
+ * Objective: minimize total weight (container weight + arts weight)
  */
 public class OptimizationService {
 
@@ -44,37 +44,37 @@ public class OptimizationService {
             
             MPSolver solver = MPSolver.createSolver("SCIP");
             if (solver == null) {
-                System.err.println("无法创建求解器，回退到启发式算法");
+                System.err.println("Could not create solver, falling back to heuristic algorithm");
                 return fallbackHeuristic(artsToPack, constraints);
             }
 
-            solver.setTimeLimit(60000); // 60秒超时
+            solver.setTimeLimit(60000); // 60 seconds time limit
 
-            // 第一步：分析每个art需要的box空间
+            // Step 1: analyze the box requirements for each art
             List<ArtBoxRequirement> artRequirements = new ArrayList<>();
             for (Art art : artsToPack) {
                 List<PackingOption> options = feasibilityService.getValidPackingOptions(art, constraints);
                 if (options.isEmpty()) {
-                    System.err.println("Art " + art.getId() + "not packable");
+                    System.err.println("Art " + art.getId() + " not packable");
                     continue;
                 }
                 artRequirements.add(new ArtBoxRequirement(art, options.get(0)));
             }
 
-            // 第二步：按BoxType分组art，计算需要的box数量
+            // Step 2: group arts by BoxType and compute the number of boxes needed
             Map<BoxType, Integer> boxesNeeded = calculateBoxesNeeded(artRequirements);
-            // 第三步：获取所有可用的container类型及其容量
+            // Step 3: obtain available container types and their capacities
             Map<ContainerType, Map<BoxType, Integer>> containerCapacities = 
                 getContainerCapacities(boxesNeeded.keySet(), constraints);
 
-            // 第四步：为每种container类型创建决策变量
+            // Step 4: create decision variables for each container type
             Map<ContainerType, MPVariable> containerVars = new HashMap<>();
             for (ContainerType containerType : containerCapacities.keySet()) {
                 MPVariable var = solver.makeIntVar(0, 100, "container_" + containerType.name());
                 containerVars.put(containerType, var);
             }
 
-            // 第五步：添加约束 - 每种box类型必须有足够的container空间
+            // Step 5: add constraints - each box type must have sufficient container capacity
             for (Map.Entry<BoxType, Integer> entry : boxesNeeded.entrySet()) {
                 BoxType boxType = entry.getKey();
                 int needed = entry.getValue();
@@ -82,20 +82,20 @@ public class OptimizationService {
                 MPConstraint constraint = solver.makeConstraint(needed, Double.POSITIVE_INFINITY, 
                     "box_capacity_" + boxType.name());
                 
-                // 对于每种container，如果它能装这种box，就添加到约束中
+                // for every container, if it can fit the box, add to capability 
                 for (Map.Entry<ContainerType, Map<BoxType, Integer>> containerEntry : containerCapacities.entrySet()) {
                     ContainerType containerType = containerEntry.getKey();
                     Map<BoxType, Integer> capacities = containerEntry.getValue();
                     
                     Integer capacity = capacities.get(boxType);
                     if (capacity != null && capacity > 0) {
-                        // 这种container能装这种box，每个container提供capacity个位置
+                        // if container can fit the box, add capacity to the box 
                         constraint.setCoefficient(containerVars.get(containerType), capacity);
                     }
                 }
             }
 
-            // 第六步：设置目标函数 - 最小化总重量
+            // Step 6: set objective - minimize total container weight
             MPObjective objective = solver.objective();
             double artsWeight = artsToPack.stream().mapToDouble(Art::getWeight).sum();
             
@@ -103,21 +103,24 @@ public class OptimizationService {
                 ContainerType containerType = entry.getKey();
                 MPVariable var = entry.getValue();
                 
-                // 每个container的成本 = container自重
-                // (arts重量是固定的，不影响最优化方向)
+                // every container's cost = container's own weight
+               
+                // (arts's weight is fixed, does not affect optimization direction)
+               
                 objective.setCoefficient(var, containerType.getWeight());
             }
             objective.setMinimization();
 
-            System.out.println("\n开始求解...");
+            System.out.println("\nStarting solver...");
 
-            // 第七步：求解
+            // step 7: solve 
             final MPSolver.ResultStatus resultStatus = solver.solve();
 
             if (resultStatus == MPSolver.ResultStatus.OPTIMAL || resultStatus == MPSolver.ResultStatus.FEASIBLE) {
 
 
-                // 提取解决方案
+                // get solution
+             
                 Map<ContainerType, Integer> solution = new HashMap<>();
                 double totalContainerWeight = 0;
                 int totalContainers = 0;
@@ -140,27 +143,27 @@ public class OptimizationService {
                     .mapToDouble(costStrategy::calculateCost)
                     .sum();
 
-                System.out.println("总成本: $" + String.format("%.2f", totalCost));
+                System.out.println("Total cost: $" + String.format("%.2f", totalCost));
 
                 return new PackingPlan(containers, totalCost);
                 
             } else {
-                System.err.println("OR-Tools 未找到可行解: " + resultStatus);
+                System.err.println("OR-Tools did not find a feasible solution: " + resultStatus);
                 return fallbackHeuristic(artsToPack, constraints);
             }
 
         } catch (Exception e) {
-            System.err.println("OR-Tools 求解出错: " + e.getMessage());
+            System.err.println("OR-Tools solver error: " + e.getMessage());
             e.printStackTrace();
             return fallbackHeuristic(artsToPack, constraints);
         }
     }
 
     /**
-     * 计算需要多少个box
+     * Calculate how many boxes are needed
      */
     private Map<BoxType, Integer> calculateBoxesNeeded(List<ArtBoxRequirement> requirements) {
-        // 按BoxType和capacity分组
+        // group by Boxtype and capacity
         Map<BoxType, Map<Integer, List<Art>>> groupedByTypeAndCapacity = new HashMap<>();
         
         for (ArtBoxRequirement req : requirements) {
@@ -170,7 +173,8 @@ public class OptimizationService {
                 .add(req.art);
         }
 
-        // 计算每种BoxType需要的box数量
+        // calculate every BoxType needs how many boxes
+        
         Map<BoxType, Integer> boxesNeeded = new HashMap<>();
         
         for (Map.Entry<BoxType, Map<Integer, List<Art>>> typeEntry : groupedByTypeAndCapacity.entrySet()) {
@@ -191,7 +195,7 @@ public class OptimizationService {
     }
 
     /**
-     * 获取每种container对每种box的容量
+     * Get the capacity (in boxes) of each container type for each box type
      */
     private Map<ContainerType, Map<BoxType, Integer>> getContainerCapacities(
             Set<BoxType> boxTypes, UserConstraints constraints) {
@@ -212,7 +216,7 @@ public class OptimizationService {
     }
 
     /**
-     * 根据OR-Tools的解构建实际的containers
+     * Build actual Container instances from the OR-Tools solution
      */
     private List<Container> buildContainersFromSolution(
             Map<ContainerType, Integer> solution,
@@ -223,33 +227,34 @@ public class OptimizationService {
 
         List<Container> containers = new ArrayList<>();
 
-        // 按BoxType分组arts
+        // Group arts by BoxType
         Map<BoxType, List<ArtBoxRequirement>> artsByBoxType = artRequirements.stream()
             .collect(Collectors.groupingBy(req -> req.option.boxType()));
 
-        // 为每种需要的container类型创建实例
+    // Instantiate containers for each required container type
         for (Map.Entry<ContainerType, Integer> entry : solution.entrySet()) {
             ContainerType containerType = entry.getKey();
             int count = entry.getValue();
             Map<BoxType, Integer> capacities = containerCapacities.get(containerType);
 
-            // 创建count个这种类型的container
+            // create count number of this container type
+           
             for (int i = 0; i < count; i++) {
                 Container container = createNewContainer(containerType);
                 containers.add(container);
             }
         }
 
-        // 现在将boxes分配到containers中
-        // 使用First Fit策略
+    // Now assign boxes to containers
+    // Use a First-Fit strategy
         for (Map.Entry<BoxType, List<ArtBoxRequirement>> entry : artsByBoxType.entrySet()) {
             BoxType boxType = entry.getKey();
             List<ArtBoxRequirement> arts = entry.getValue();
 
-            // 获取capacity
+            // get capacity
             int capacity = arts.isEmpty() ? 1 : arts.get(0).option.capacity();
 
-            // 创建boxes
+            // create boxes
             List<Box> boxes = new ArrayList<>();
             for (int i = 0; i < arts.size(); i += capacity) {
                 Box box = createNewBox(boxType);
@@ -260,7 +265,8 @@ public class OptimizationService {
                 boxes.add(box);
             }
 
-            // 将boxes分配到合适的containers
+            // divide boxes into suitable containers
+           
             for (Box box : boxes) {
                 boolean placed = false;
                 
@@ -269,7 +275,8 @@ public class OptimizationService {
                     Integer maxCapacity = capacities.get(boxType);
                     
                     if (maxCapacity != null && maxCapacity > 0) {
-                        // 检查这个container还能装下这个box吗
+                        // check whether the container can still fit this box
+                   
                         long currentBoxCount = container.getBoxesInContainer().stream()
                             .filter(b -> b.getBoxType() == boxType)
                             .count();
@@ -283,7 +290,7 @@ public class OptimizationService {
                 }
                 
                 if (!placed) {
-                    System.err.println("cannot place box " + box.getId());
+                    System.err.println("Cannot place box " + box.getId());
                 }
             }
         }
@@ -291,7 +298,7 @@ public class OptimizationService {
         return containers;
     }
 
-    // Fallback方法保持不变
+    // Fallback method remains unchanged
     private PackingPlan fallbackHeuristic(List<Art> artsToPack, UserConstraints constraints) {
         List<Container> containers = new ArrayList<>();
         List<Art> sortedArts = new ArrayList<>(artsToPack);
@@ -383,7 +390,7 @@ public class OptimizationService {
     }
 
     /**
-     * Art和其对应的box需求
+     * Artand its required box option
      */
     private static class ArtBoxRequirement {
         final Art art;
