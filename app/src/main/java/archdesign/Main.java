@@ -133,10 +133,10 @@ public class Main {
             if (!isOversized) {
                 standardPieces++;
             } else {
-                String dims = art.width() + "\" x " + art.height() + "\""; // e.g. 46" x 34"
+                String dims = art.height() + "\" x " + art.width() + "\""; // e.g. 46" x 34"
                 OversizeGroup g = oversizeMap.get(dims);
                 if (g == null) {
-                    g = new OversizeGroup(art.width(), art.height());
+                    g = new OversizeGroup(art.height(), art.width());
                     oversizeMap.put(dims, g);
                 }
                 g.add(art.weight());

@@ -44,11 +44,11 @@ public class OptimizationService {
             
             MPSolver solver = MPSolver.createSolver("SCIP");
             if (solver == null) {
-                System.err.println("无法创建求解器，回退到启发式算法");
+                System.err.println("Google OR-TOOLS initialization failed.");
                 return fallbackHeuristic(artsToPack, constraints);
             }
 
-            solver.setTimeLimit(60000); // 60秒超时
+            solver.setTimeLimit(60000);
 
             // 第一步：分析每个art需要的box空间
             List<ArtBoxRequirement> artRequirements = new ArrayList<>();
@@ -108,9 +108,6 @@ public class OptimizationService {
                 objective.setCoefficient(var, containerType.getWeight());
             }
             objective.setMinimization();
-
-            System.out.println("\n开始求解...");
-
             // 第七步：求解
             final MPSolver.ResultStatus resultStatus = solver.solve();
 
@@ -139,18 +136,15 @@ public class OptimizationService {
                 double totalCost = containers.stream()
                     .mapToDouble(costStrategy::calculateCost)
                     .sum();
-
-                System.out.println("总成本: $" + String.format("%.2f", totalCost));
-
                 return new PackingPlan(containers, totalCost);
                 
             } else {
-                System.err.println("OR-Tools 未找到可行解: " + resultStatus);
+                System.err.println("OR-Tools no possible solutions: " + resultStatus);
                 return fallbackHeuristic(artsToPack, constraints);
             }
 
         } catch (Exception e) {
-            System.err.println("OR-Tools 求解出错: " + e.getMessage());
+            System.err.println("OR-Tools ERROR: " + e.getMessage());
             e.printStackTrace();
             return fallbackHeuristic(artsToPack, constraints);
         }
