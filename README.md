@@ -1,59 +1,63 @@
 # team-project-4504-xiaoyu-deyuan-jiaxi
 
-## Developer Guide
+A simple packing/shipping planning Java project used for the course project. This repo contains an `app` module with the CLI entrypoint `archdesign.Main`.
 
-This guide provides instructions for compiling and running the application from the command line on different operating systems.
+## Developer Guide (minimal updates)
 
----
+This project uses Gradle. Use the included wrapper to build and run the project so you get a reproducible Gradle version.
 
-## Running the Application
+### Build with Gradle
 
-To run the application, follow these steps.
+From the project root:
 
-### 1. Compile the Java Code
-
-Make sure you are in the project root directory (`team-project-4504-xiaoyu-deyuan-jiaxi`).
-
-**Windows (CMD):**
-
-```bat
-javac -d bin src\Main.java src\parser\*.java src\entities\*.java src\interactor\*.java src\request\*.java src\response\*.java
-```
-
-**Windows (PowerShell):**
+Windows (CMD/PowerShell):
 
 ```powershell
-javac (Get-ChildItem -Recurse -Filter *.java).FullName
+.\gradlew.bat build
 ```
 
-**Linux / macOS (bash/zsh):**
+Linux / macOS:
 
 ```bash
-javac src/Main.java src/parser/*.java src/entities/*.java src/interactor/*.java src/request/*.java src/response/*.java
+./gradlew build
 ```
 
----
+This will compile the code and run the tests. If you just want to run the app without tests, append `-x test` to the build command.
 
-### 2. Run the Application
+### Run the application
 
-Execute the compiled code using the `java` command.
-You must provide the path to a `.csv` file as a command-line argument.
+If the `:app:run` task is available in the project, you can run via Gradle:
+
+Windows:
+
+```powershell
+.\gradlew.bat :app:run --args="<path/to/your.csv>"
+```
+
+Linux / macOS:
 
 ```bash
-java -cp bin Main <path_to_your_file.csv>
+./gradlew :app:run --args='<path/to/your.csv>'
 ```
 
-**Example:**
+Alternatively, after `./gradlew build` you can run the main class directly using the classpath produced in `app/build` e.g.:
+
+Windows (CMD):
+
+```bat
+java -cp "app\build\libs\*;app\build\classes\java\main" archdesign.Main <path/to/your.csv>
+```
+
+Linux / macOS:
 
 ```bash
-java -cp bin Main Input1.csv
+java -cp "app/build/libs/*:app/build/classes/java/main" archdesign.Main <path/to/your.csv>
 ```
 
----
+### Notes
 
-## Contribution Breakdown
+- The CLI expects a CSV file path as the only argument.
+- For development prefer using the Gradle wrapper (`gradlew` / `gradlew.bat`) included in the repo.
 
-* Deyuan: Packer
-* Jiaxi: Request, Response
-* Xiaoyu: Entities, Parser but follow the new instruction and file structure
+
 
