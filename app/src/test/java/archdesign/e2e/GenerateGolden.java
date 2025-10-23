@@ -4,7 +4,6 @@ import archdesign.Main;
 import archdesign.e2e.testutils.ViewModelCsv;
 import archdesign.response.ShipmentViewModel;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Disabled;
 
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -20,14 +19,5 @@ public class GenerateGolden {
         return Path.of(res.toURI());
     }
 
-    @Disabled("Dev helper to regenerate golden CSV; disabled in CI")
-    @Test
-    public void printSmallSampleCsv() throws Exception {
-        Path p = resourcePath("sample_input_small.csv");
-        ShipmentViewModel vm = Main.processFile(p.toString());
-        String csv = ViewModelCsv.toCsv(vm);
-        // Print to stdout so maintainers can capture and save as golden file
-        System.out.println(csv);
-        assertNotNull(csv);
-    }
+    // Dev helper to regenerate golden CSV removed from tests in CI.
 }
