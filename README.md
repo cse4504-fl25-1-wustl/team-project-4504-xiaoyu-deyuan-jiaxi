@@ -59,5 +59,11 @@ java -cp "app/build/libs/*:app/build/classes/java/main" archdesign.Main <path/to
 - The CLI expects a CSV file path as the only argument.
 - For development prefer using the Gradle wrapper (`gradlew` / `gradlew.bat`) included in the repo.
 
+### Feature
+
+Xiaoyu: Algorithm fix, main args & cli & .json presenter implementation
+Jiaxi: Box testing files design & implementation
+Deyuan: Crate & Pallet testing files design & implementation
+
 
 
