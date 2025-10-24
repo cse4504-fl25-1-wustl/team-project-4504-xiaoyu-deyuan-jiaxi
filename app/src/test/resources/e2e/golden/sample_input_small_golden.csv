@@ -1,0 +1,4 @@
+containerId,boxId,artId,width,height,material,weight
+Container-1,Box-1,TagINV1-Item1,10,10,Glass,1.0
+Container-1,Box-1,TagINV2-Item1,5,5,Acrylic,1.0
+Container-1,Box-1,TagINV2-Item2,5,5,Acrylic,1.0
