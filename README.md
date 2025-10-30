@@ -59,6 +59,34 @@ java -cp "app/build/libs/*:app/build/classes/java/main" archdesign.Main <path/to
 - The CLI expects a CSV file path as the only argument.
 - For development prefer using the Gradle wrapper (`gradlew` / `gradlew.bat`) included in the repo.
 
+### Running integration tests
+
+Run all integration tests (tests in the `archdesign.integration` package) from the project root on Windows (cmd.exe / PowerShell):
+
+```powershell
+.\gradlew.bat :app:test --no-daemon --tests "archdesign.integration.*"
+```
+
+Notes:
+
+- To run every test in the `app` module (unit + integration) use:
+
+```powershell
+.\gradlew.bat :app:test --no-daemon
+```
+
+- If Gradle skips execution because tasks are "UP-TO-DATE", force a re-run with:
+
+```powershell
+.\gradlew.bat :app:test --no-daemon --tests "archdesign.integration.*" --rerun-tasks
+```
+
+- After a run, open the HTML report at `app\\build\\reports\\tests\\test\\index.html` to inspect failures. From cmd you can open it with:
+
+```powershell
+start "" "app\\build\\reports\\tests\\test\\index.html"
+```
+
 ### Feature
 
 Xiaoyu: Algorithm fix, main args & cli & .json presenter implementation
