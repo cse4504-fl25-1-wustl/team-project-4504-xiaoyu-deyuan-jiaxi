@@ -5,16 +5,16 @@ import archdesign.entities.enums.Material;
 public class Art {
     private final String id;
     private final double weight;
-    private final int height;
-    private final int width;
+    private final double height;
+    private final double width;
     private final Material material;
 
-    public Art(String id, int height, int width, int thickness, Material material) {
+    public Art(String id, double height, double width, int thickness, Material material) {
         this.id = id;
         this.height = height;
         this.width = width;
         this.material = material;
-        this.weight = (int) Math.ceil(height * width * (double)material.getWeight());
+        this.weight = Math.ceil(height * width * (double)material.getWeight());
     }
 
     public String getId() {
@@ -25,11 +25,11 @@ public class Art {
         return weight;
     }
 
-    public int getHeight() {
+    public double getHeight() {
         return height;
     }
 
-    public int getWidth() {
+    public double getWidth() {
         return width;
     }
 

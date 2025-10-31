@@ -109,8 +109,8 @@ public final class RuleProvider {
     private static BoxRuleSpecification generateStandardBoxRule(Material material, int capacity) {
         return BoxRuleSpecification.newBuilder(material.name() + " in STANDARD Box", BoxType.STANDARD, capacity)
                 .forMaterial(material)
-                .withMaxWidth(36)
-                .withMaxHeight(36)
+                .withMaxWidth(36.5)
+                .withMaxHeight(36.5)
                 .build();
     }
     
@@ -119,11 +119,13 @@ public final class RuleProvider {
                 .forMaterial(material)
                 .withMinWidth(37)
                 .withMinHeight(37)
-                .withMaxWidth(43) // If it's 44x44, it must be a crate.
-                .withMaxHeight(43)
+                .withMaxWidth(43.5) // If it's 44x44, it must be a crate.
+                .withMaxHeight(43.5)
                 .build();
     }
     
+
+    //bug高发地警告
     private static BoxRuleSpecification generateCrateRuleForSmallArt(Material material, int capacity) {
         return BoxRuleSpecification.newBuilder(material.name() + " in CRATE (small)", BoxType.CRATE, capacity)
                 .forMaterial(material)

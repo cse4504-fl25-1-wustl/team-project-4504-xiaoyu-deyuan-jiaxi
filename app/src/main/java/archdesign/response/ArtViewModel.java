@@ -6,8 +6,8 @@ package archdesign.response;
  */
 public record ArtViewModel(
     String id,
-    int width,
-    int height,
+    double width,
+    double height,
     String material,
     double weight
 ) {

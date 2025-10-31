@@ -8,7 +8,7 @@ public record ArtDataRecord(
     int quantity,
     String tagNumber,
     String finalMedium,
-    int width,
-    int height
+    double width,
+    double height
 ) {
 }

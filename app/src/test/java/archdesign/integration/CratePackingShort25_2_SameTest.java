@@ -47,13 +47,13 @@ public class CratePackingShort25_2_SameTest {
             for (BoxViewModel box : container.boxes()) {
                 for (ArtViewModel art : box.arts()) {
                     totalPieces++;
-                    int w = art.width();
-                    int h = art.height();
+                    double w = art.width();
+                    double h = art.height();
                     if (w <= 44 && h <= 44) {
                         standardSizePieces++;
                     } else {
-                        int side1 = Math.max(w, h);
-                        int side2 = Math.min(w, h);
+                        double side1 = Math.max(w, h);
+                        double side2 = Math.min(w, h);
                         String key = side1 + "x" + side2;
                         oversizeMap.put(key, oversizeMap.getOrDefault(key, 0) + 1);
                     }

@@ -265,8 +265,8 @@ public class Main {
                 standardSizePieces++;
             } else {
                 // Ensure side1 is the longer side
-                int longerSide = Math.max(art.height(), art.width());
-                int shorterSide = Math.min(art.height(), art.width());
+                double longerSide = Math.max(art.height(), art.width());
+                double shorterSide = Math.min(art.height(), art.width());
                 String key = longerSide + "x" + shorterSide;
                 OversizeGroup g = oversizeMap.get(key);
                 if (g == null) {
@@ -351,11 +351,11 @@ public class Main {
 
     // small helper to group oversize pieces
     private static class OversizeGroup {
-        final int w;
-        final int h;
+        final double w;
+        final double h;
         int qty = 0;
         double totalWeight = 0.0;
-        OversizeGroup(int w, int h) { this.w = w; this.h = h; }
+        OversizeGroup(double w, double h) { this.w = w; this.h = h; }
         void add(double weight) { qty++; totalWeight += weight; }
     }
 }
