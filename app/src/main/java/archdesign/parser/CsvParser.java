@@ -33,8 +33,13 @@ public class CsvParser implements ArtDataParser {
                     int quantity = Integer.parseInt(values[1].trim());
                     String tagNumber = values[2].trim();
                     String finalMedium = values[3].trim();
-                    int width = Integer.parseInt(values[4].trim());
+/*                    int width = Integer.parseInt(values[4].trim());
                     int height = Integer.parseInt(values[5].trim());
+                    make changement to support float numbers*/
+                    double widthDouble = Double.parseDouble(values[4].trim());
+                    double heightDouble = Double.parseDouble(values[5].trim());
+                    int width = (int) Math.ceil(widthDouble);
+                    int height = (int) Math.ceil(heightDouble);
                     
                     // Extract Glazing column (index 6) if it exists
                     String glazing = "";
