@@ -40,23 +40,67 @@ Linux / macOS:
 ./gradlew :app:run --args='<path/to/your.csv>'
 ```
 
-Alternatively, after `./gradlew build` you can run the main class directly using the classpath produced in `app/build` e.g.:
+#### Optional JSON Output
 
-Windows (CMD):
+You can optionally specify an output JSON file as a second argument. If provided, the application will write the packing results to the file in JSON format:
 
-```bat
-java -cp "app\build\libs\*;app\build\classes\java\main" archdesign.Main <path/to/your.csv>
+Windows:
+
+```powershell
+.\gradlew.bat :app:run --args="<path/to/your.csv> <path/to/output.json>"
 ```
 
 Linux / macOS:
 
 ```bash
-java -cp "app/build/libs/*:app/build/classes/java/main" archdesign.Main <path/to/your.csv>
+./gradlew :app:run --args='<path/to/your.csv> <path/to/output.json>'
+```
+
+Alternatively, after `./gradlew build` you can run the main class directly using the classpath produced in `app/build` e.g.:
+
+Windows (CMD):
+
+```bat
+java -cp "app\build\libs\*;app\build\classes\java\main" archdesign.Main <path/to/your.csv> [optional-output.json]
+```
+
+Linux / macOS:
+
+```bash
+java -cp "app/build/libs/*:app/build/classes/java/main" archdesign.Main <path/to/your.csv> [optional-output.json]
+```
+
+#### JSON Output Format
+
+When an output file is specified, the application generates a JSON file with the following schema:
+
+```json
+{
+  "total_pieces": <number of art pieces>,
+  "standard_size_pieces": <number of standard-sized pieces (≤44")>,
+  "oversized_pieces": [
+    {
+      "side1": <dimension in inches>,
+      "side2": <dimension in inches>,
+      "quantity": <count>
+    }
+  ],
+  "standard_box_count": <number of STANDARD boxes>,
+  "large_box_count": <number of LARGE boxes>,
+  "custom_piece_count": <number of UPS and CRATE boxes>,
+  "standard_pallet_count": <number of standard and glass pallets>,
+  "oversized_pallet_count": <number of oversized pallets>,
+  "crate_count": <number of crates>,
+  "total_artwork_weight": <total weight of all art pieces>,
+  "total_packaging_weight": <total weight of packaging materials>,
+  "final_shipment_weight": <total shipment weight>
+}
 ```
 
 ### Notes
 
-- The CLI expects a CSV file path as the only argument.
+- The CLI expects a CSV file path as the first argument.
+- An optional JSON output file path can be provided as the second argument.
 - For development prefer using the Gradle wrapper (`gradlew` / `gradlew.bat`) included in the repo.
 
 ### Running integration tests

@@ -13,8 +13,15 @@ import archdesign.response.ShipmentViewModel;
 import archdesign.response.ContainerViewModel;
 import archdesign.response.BoxViewModel;
 import archdesign.response.ArtViewModel;
+import archdesign.response.JsonOutputSchema;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * A simple command-line application to run the entire packing process.
@@ -24,15 +31,16 @@ public class Main {
 
     /**
      * The main entry point for the Java application.
-     * @param args Command line arguments, expecting the path to a CSV file.
+     * @param args Command line arguments, expecting the path to a CSV file and optionally an output JSON file.
      */
     public static void main(String[] args) {
         if (args.length == 0) {
             System.err.println("Error: Please provide the path to the CSV file as an argument.");
-            System.err.println("Usage: java Main <path/to/your/file.csv>");
+            System.err.println("Usage: java Main <path/to/your/file.csv> [optional-output.json]");
             return;
         }
         String filePath = args[0];
+        String outputFilePath = args.length > 1 ? args[1] : null;
         
         System.out.println("--- Starting Packer Process for file: " + filePath + " ---");
 
@@ -41,6 +49,12 @@ public class Main {
         // display on console
         System.out.println("\n--- Displaying Packing Plan ---");
         displayViewModel(viewModel);
+        
+        // If output file is specified, write JSON output
+        if (outputFilePath != null) {
+            System.out.println("\n--- Writing JSON output to: " + outputFilePath + " ---");
+            writeJsonOutput(viewModel, outputFilePath);
+        }
     }
 
     /**
@@ -216,6 +230,119 @@ public class Main {
         System.out.println("Total Artwork Weight: " + String.format("%.0f", totalArtworkWeight) + " lbs");
         System.out.println("Total Packaging Weight: " + String.format("%.0f", totalPackagingWeight) + " lbs");
         System.out.println("Final Shipment Weight: " + String.format("%.0f", finalShipmentWeight) + " lbs");
+    }
+
+    /**
+     * Writes the packing results to a JSON file.
+     * @param viewModel The ShipmentViewModel containing all packing data.
+     * @param outputFilePath The path to the output JSON file.
+     */
+    private static void writeJsonOutput(ShipmentViewModel viewModel, String outputFilePath) {
+        if (viewModel == null || viewModel.containers().isEmpty()) {
+            System.err.println("Warning: No packing data to write to JSON file.");
+            return;
+        }
+
+        // Collect all arts across the shipment
+        List<ArtViewModel> allArts = new ArrayList<>();
+        for (ContainerViewModel container : viewModel.containers()) {
+            for (BoxViewModel box : container.boxes()) {
+                allArts.addAll(box.arts());
+            }
+        }
+
+        // Create JSON output object
+        JsonOutputSchema jsonOutput = new JsonOutputSchema();
+
+        // Calculate total pieces and standard vs oversized
+        int totalPieces = allArts.size();
+        int standardSizePieces = 0;
+        java.util.Map<String, OversizeGroup> oversizeMap = new java.util.LinkedHashMap<>();
+
+        for (ArtViewModel art : allArts) {
+            boolean isOversized = art.width() > 44 || art.height() > 44;
+            if (!isOversized) {
+                standardSizePieces++;
+            } else {
+                String key = art.height() + "x" + art.width();
+                OversizeGroup g = oversizeMap.get(key);
+                if (g == null) {
+                    g = new OversizeGroup(art.height(), art.width());
+                    oversizeMap.put(key, g);
+                }
+                g.add(art.weight());
+            }
+        }
+
+        // Convert oversized map to list
+        List<JsonOutputSchema.OversizedPiece> oversizedPieces = new ArrayList<>();
+        for (OversizeGroup g : oversizeMap.values()) {
+            oversizedPieces.add(new JsonOutputSchema.OversizedPiece(g.h, g.w, g.qty));
+        }
+
+        // Count boxes by type
+        int standardBoxCount = 0;
+        int largeBoxCount = 0;
+        int customPieceCount = 0; // UPS boxes and CRATE boxes
+
+        for (ContainerViewModel container : viewModel.containers()) {
+            for (BoxViewModel box : container.boxes()) {
+                String boxType = box.type();
+                if (boxType.equals("STANDARD")) {
+                    standardBoxCount++;
+                } else if (boxType.equals("LARGE")) {
+                    largeBoxCount++;
+                } else {
+                    // UPS_SMALL, UPS_LARGE, or CRATE
+                    customPieceCount++;
+                }
+            }
+        }
+
+        // Count containers by type
+        int standardPalletCount = 0;
+        int oversizedPalletCount = 0;
+        int crateCount = 0;
+
+        for (ContainerViewModel container : viewModel.containers()) {
+            String containerType = container.type();
+            if (containerType.equals("STANDARD_PALLET") || containerType.equals("GLASS_PALLET")) {
+                standardPalletCount++;
+            } else if (containerType.equals("OVERSIZE_PALLET")) {
+                oversizedPalletCount++;
+            } else if (containerType.equals("STANDARD_CRATE")) {
+                crateCount++;
+            }
+        }
+
+        // Calculate weights
+        double totalArtworkWeight = allArts.stream().mapToDouble(ArtViewModel::weight).sum();
+        double finalShipmentWeight = viewModel.totalWeight();
+        double totalPackagingWeight = finalShipmentWeight - totalArtworkWeight;
+
+        // Populate JSON output
+        jsonOutput.setTotalPieces(totalPieces);
+        jsonOutput.setStandardSizePieces(standardSizePieces);
+        jsonOutput.setOversizedPieces(oversizedPieces);
+        jsonOutput.setStandardBoxCount(standardBoxCount);
+        jsonOutput.setLargeBoxCount(largeBoxCount);
+        jsonOutput.setCustomPieceCount(customPieceCount);
+        jsonOutput.setStandardPalletCount(standardPalletCount);
+        jsonOutput.setOversizedPalletCount(oversizedPalletCount);
+        jsonOutput.setCrateCount(crateCount);
+        jsonOutput.setTotalArtworkWeight(totalArtworkWeight);
+        jsonOutput.setTotalPackagingWeight(totalPackagingWeight);
+        jsonOutput.setFinalShipmentWeight(finalShipmentWeight);
+
+        // Write to file using Gson
+        try (FileWriter writer = new FileWriter(outputFilePath)) {
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            gson.toJson(jsonOutput, writer);
+            System.out.println("Successfully wrote JSON output to: " + outputFilePath);
+        } catch (IOException e) {
+            System.err.println("Error writing JSON output file: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     // small helper to group oversize pieces
