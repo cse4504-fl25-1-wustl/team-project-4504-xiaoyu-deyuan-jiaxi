@@ -1,0 +1,4 @@
+- Line item 1 would need a large box since it exceeds 36in, the threshold for a standard box, for both dimensions. 
+- Line item 2 would fit into a standard box since it only exceeds 36in on one dimension.
+
+Since we have 1 large items and 2 standard item, we can fit all three into a large box (glazing is glass, so 6 pieces can fit in a box) instead of packing them in a large and a standard box. We pack the large item in the large box first and then fill in the large box with standard items also.

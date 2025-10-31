@@ -1,0 +1,14 @@
+35.5x35.5: at least one dimension less than 36.5 and height less than 88
+35.5x85: at least one dimension less than 36.5 and height less than 88
+36.5x36.5: least one dimension less than or equal to 36.5 and height less than 88
+36.5x88: least one dimension less than or equal to 36.5 and height <= 88
+36x36: least one dimension less than or equal to 36.5 and height less than 88
+36x88: least one dimension less than or equal to 36.5 and height <= 88
+37x88: both dimensions greater than 36.5 and at least one less than or equal to 43.5 and height <= 88
+43.5x43.5: both dimensions greater than 36.5 and at least one less than or equal to 43.5 and height less than 88
+43.5x83: both dimensions greater than 36.5 and at least one less than or equal to 43.5 and height less than 88
+43x88.5: both dimensions greater than 36.5 and at least one less than or equal to 43.5 but height greater than 88
+44x44: both dimensions greater than 43.5
+88.5x35.5: least one dimension less than or equal to 36.5 but height greater than 88
+88x43.5: both dimensions greater than 36.5 and at least one less than or equal to 43.5 and height <= 88
+
