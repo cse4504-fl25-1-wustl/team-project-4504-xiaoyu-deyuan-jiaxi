@@ -1,0 +1,6 @@
+- Line item 1 would need a large box since it exceeds 36in, the threshold for a standard box, for both dimensions. 
+- Line item 2 would fit into a standard box since it only exceeds 36in on one dimension.
+- Line item 3 would need a large box since it exceeds 36in, the threshold for a standard box, for both dimensions. 
+- Line item 4 would fit into a standard box since it only exceeds 36in on one dimension.
+
+Since we have 6 large items and 6 standard items, we can pack the large items first into 1 large box. We can then package all the standard sized items into a standard box, resulting in 1 large box and 1 standard box.

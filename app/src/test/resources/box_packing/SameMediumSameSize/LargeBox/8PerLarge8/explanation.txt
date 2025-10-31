@@ -1,0 +1,1 @@
+8 <= 8 (client instructed to use the same number per box for both standard and large box), 1 box is enough.

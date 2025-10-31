@@ -1,0 +1,3 @@
+- acrylic and glass glazing don't make a difference for how many pieces can fit per box
+- each standard box can hold 6 framed paper prints
+- 6 framed paper prints --> should be 1 standard box

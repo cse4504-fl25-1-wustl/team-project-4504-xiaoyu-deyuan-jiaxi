@@ -1,0 +1,3 @@
+Line 1 can fit into a standard box and line 2 can fit into a large box with quantity 2.
+
+Since we have 1 standard item and 2 large items, we can fit all of them into 1 large box since they're all glass.
