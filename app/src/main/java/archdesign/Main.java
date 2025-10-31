@@ -264,10 +264,13 @@ public class Main {
             if (!isOversized) {
                 standardSizePieces++;
             } else {
-                String key = art.height() + "x" + art.width();
+                // Ensure side1 is the longer side
+                int longerSide = Math.max(art.height(), art.width());
+                int shorterSide = Math.min(art.height(), art.width());
+                String key = longerSide + "x" + shorterSide;
                 OversizeGroup g = oversizeMap.get(key);
                 if (g == null) {
-                    g = new OversizeGroup(art.height(), art.width());
+                    g = new OversizeGroup(longerSide, shorterSide);
                     oversizeMap.put(key, g);
                 }
                 g.add(art.weight());
@@ -275,6 +278,7 @@ public class Main {
         }
 
         // Convert oversized map to list
+        // side1 is stored in h (first dimension), side2 in w (second dimension)
         List<JsonOutputSchema.OversizedPiece> oversizedPieces = new ArrayList<>();
         for (OversizeGroup g : oversizeMap.values()) {
             oversizedPieces.add(new JsonOutputSchema.OversizedPiece(g.h, g.w, g.qty));
