@@ -2,6 +2,7 @@ package archdesign;
 
 import archdesign.entities.Art;
 import archdesign.entities.enums.ShippingProvider;
+import archdesign.entities.enums.ContainerType;
 import archdesign.interactor.Packer;
 import archdesign.interactor.PackingPlan;
 import archdesign.interactor.UserConstraints;
@@ -55,10 +56,64 @@ public class Main {
         System.out.println("Successfully imported " + artsToPack.size() + " total art items.");
 
         // --- "CORE" PART ---
-        UserConstraints constraints = new UserConstraints();
+        // Allow tests to request crate-preferred packing via system property
+        String preferCrates = System.getProperty("packing.preferCrates");
+        UserConstraints constraints;
+        if ("true".equalsIgnoreCase(preferCrates)) {
+            // Prefer crates but allow pallets as fallbacks so tests requesting
+            // 'crate preference' don't force an infeasible-only-crate plan.
+            constraints = UserConstraints.newBuilder()
+                .withAllowedContainerTypes(java.util.List.of(
+                    ContainerType.STANDARD_CRATE,
+                    ContainerType.STANDARD_PALLET,
+                    ContainerType.OVERSIZE_PALLET
+                ))
+                .build();
+        } else {
+            constraints = new UserConstraints();
+        }
+
         ShippingProvider provider = ShippingProvider.PLACEHOLDER;
         System.out.println("\n--- Running Packer Algorithm... ---");
-        PackingPlan finalPlan = Packer.pack(artsToPack, constraints, provider);
+
+        // If tests requested crate preference, attempt a crate-only plan first
+        // and only fall back to allowing pallets if the crate-only plan cannot
+        // pack all items (avoids choosing pallets when crates are feasible).
+        PackingPlan finalPlan;
+        if ("true".equalsIgnoreCase(preferCrates)) {
+            UserConstraints crateOnly = UserConstraints.newBuilder()
+                .withAllowedContainerTypes(java.util.List.of(ContainerType.STANDARD_CRATE))
+                .build();
+
+            System.out.println("Attempting crate-only packing (test preference)...");
+            finalPlan = Packer.pack(artsToPack, crateOnly, provider);
+
+            // Count how many arts were actually placed in the plan
+            int packedCount = 0;
+            if (finalPlan != null && finalPlan.getContainers() != null) {
+                for (archdesign.entities.Container c : finalPlan.getContainers()) {
+                    for (archdesign.entities.Box b : c.getBoxesInContainer()) {
+                        packedCount += b.getArtsInBox().size();
+                    }
+                }
+            }
+
+            if (packedCount < artsToPack.size()) {
+                System.out.println("Crate-only plan packed " + packedCount + " of " + artsToPack.size() + " items — retrying with pallets allowed.");
+
+                System.out.println("Crate-only plan packed " + packedCount + " of " + artsToPack.size() + " items — retrying with pallets allowed.");
+                UserConstraints relaxed = UserConstraints.newBuilder()
+                    .withAllowedContainerTypes(java.util.List.of(
+                        ContainerType.STANDARD_CRATE,
+                        ContainerType.STANDARD_PALLET,
+                        ContainerType.OVERSIZE_PALLET
+                    ))
+                    .build();
+                finalPlan = Packer.pack(artsToPack, relaxed, provider);
+            }
+        } else {
+            finalPlan = Packer.pack(artsToPack, constraints, provider);
+        }
 
         // --- "OUT" PART ---
         System.out.println("\n--- Generating Response ViewModel... ---");
@@ -85,7 +140,7 @@ public class Main {
     System.out.println("------------------------------------");
 
     // Gather all arts across the shipment so we can compute the requested work-order summary
-    var allArts = new java.util.ArrayList<archdesign.response.ArtViewModel>();
+    java.util.List<archdesign.response.ArtViewModel> allArts = new java.util.ArrayList<>();
         for (ContainerViewModel container : viewModel.containers()) {
             String containerDims = String.format("%dx%dx%d", container.length(), container.width(), container.currentHeight());
             System.out.println(
@@ -151,7 +206,7 @@ public class Main {
         System.out.println("- Standard Size Pieces: " + standardPieces);
         System.out.println("- Oversized Pieces: " + oversizeMap.values().stream().mapToInt(g->g.qty).sum());
         if (!oversizeMap.isEmpty()) {
-            for (var entry : oversizeMap.entrySet()) {
+            for (java.util.Map.Entry<String, OversizeGroup> entry : oversizeMap.entrySet()) {
                 OversizeGroup g = entry.getValue();
                 System.out.println("   * " + entry.getKey() + " (Qty: " + g.qty + ") = " + String.format("%.0f", g.totalWeight) + " lbs");
             }
