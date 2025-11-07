@@ -46,14 +46,18 @@ public class JsonOutputWriter {
         // Collect all arts across the shipment
         List<ArtViewModel> allArts = collectAllArts(viewModel);
         
-        // Get unpacked arts
+        // Get unpacked arts (custom pieces - oversized items packed individually)
         List<ArtViewModel> unpackedArts = viewModel.unpackedArts();
 
         // Create JSON output object
         JsonOutputSchema jsonOutput = new JsonOutputSchema();
 
-        // Calculate pieces and oversized information
-        PieceStatistics pieceStats = calculatePieceStatistics(allArts);
+        // Calculate pieces and oversized information (including unpacked arts)
+        // Combine all arts and unpacked arts for accurate total count
+        List<ArtViewModel> allArtsIncludingUnpacked = new ArrayList<>(allArts);
+        allArtsIncludingUnpacked.addAll(unpackedArts);
+        
+        PieceStatistics pieceStats = calculatePieceStatistics(allArtsIncludingUnpacked);
         jsonOutput.setTotalPieces(pieceStats.totalPieces);
         jsonOutput.setStandardSizePieces(pieceStats.standardSizePieces);
         jsonOutput.setOversizedPieces(pieceStats.oversizedPieces);

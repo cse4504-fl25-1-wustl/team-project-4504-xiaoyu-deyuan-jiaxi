@@ -154,9 +154,11 @@ Please review the error messages above for specific art IDs that could not be pa
 - Optional third argument: packing mode (`default`, `box-only`, or `crate-only`).
 - For development prefer using the Gradle wrapper (`gradlew` / `gradlew.bat`) included in the repo.
 
-### Running integration tests
+### Running Integration Tests
 
-Run all integration tests (tests in the `archdesign.integration` package) from the project root on Windows (cmd.exe / PowerShell):
+#### Option 1: Run JUnit Integration Tests (Java Test Classes)
+
+Run all JUnit integration tests from the project root on Windows (cmd.exe / PowerShell):
 
 ```powershell
 .\gradlew.bat :app:test --no-daemon --tests "archdesign.integration.*"
@@ -182,15 +184,100 @@ Notes:
 start "" "app\\build\\reports\\tests\\test\\index.html"
 ```
 
-### Running with Git Bash 
+#### Option 2: Run CSV-Based Integration Tests (Automated Test Script)
+
+The project includes `run_integration_tests.sh`, a bash script that automatically runs the application against all test cases in `app/src/test/resources/` and validates outputs against expected results.
+
+**How it works:**
+- Finds all `expected_output.json` files in the test resources (81 tests total)
+- For each JSON file, selects any CSV file in the same directory as input
+- Runs the application: `./gradlew run --args="<csv> actual_output.json"`
+- Compares the generated output with the expected output (only validates fields present in expected_output.json)
+- **Cleanup**: Automatically deletes `actual_output.json` after successful tests; keeps it for failed tests to aid debugging
+- Supports three test categories:
+  - `box_packing` (51 tests): Uses standard packing mode
+  - `pallet_packing` (12 tests): Uses standard packing mode
+  - `crate_packing` (18 tests): Uses `-crate-only` mode
+
+**Important Notes:**
+- `expected_output.json` contains only **key validation fields**, not the complete output structure
+- The script compares only the fields present in `expected_output.json`:
+  - `total_pieces`: Total number of artwork pieces
+  - `standard_box_count`: Number of standard boxes used
+  - `large_box_count`: Number of large boxes used
+  - `custom_piece_count`: Number of custom/oversized pieces
+  - Additional container counts (pallets, crates) in some tests
+- Generated `actual_output.json` contains the full detailed output but is deleted after passing tests
+
+**Run the script:**
+
+On **Git Bash** or **WSL**:
+```bash
+# Make the script executable (first time only)
+chmod +x run_integration_tests.sh
+
+# Run all integration tests
+./run_integration_tests.sh
+```
+
+On **Windows PowerShell** (requires Git Bash or WSL installed):
+```powershell
+# Using Git Bash
+bash run_integration_tests.sh
+
+# Or using WSL
+wsl bash run_integration_tests.sh
+```
+
+**Output format:**
+```
+========================================
+  Integration Test Runner
+========================================
+
+###################################
+#  Testing: box_packing
+###################################
+[INFO] Processing tests in: app/src/test/resources/box_packing
+
+================================================
+Test #1: MixedMediumSameSize/LargeBox/1_4PerBox-5_6PerBox
+================================================
+[INFO] Input: input.csv
+[INFO] Expected: expected_output.json
+[INFO] Output: actual_output.json
+[PASS] PASSED: MixedMediumSameSize/LargeBox/1_4PerBox-5_6PerBox
+
+...
+
+========================================
+  TEST SUMMARY
+========================================
+Total tests:  81
+Passed:       81
+Failed:       0
+========================================
+
+[PASS] All tests passed! 🎉
+```
+
+**Notes:**
+- The script automatically excludes the `e2e` directory from testing
+- Failed tests display the test name and reason (e.g., "Output mismatch", "No CSV file found")
+- The script uses `jq` or `python3` for JSON comparison if available, otherwise falls back to `diff`
+- You can also use the older `run_all_tests.sh` script to run JUnit tests via Gradle
+
+#### Running with Git Bash
 
 ```bash
-# run the project's test helper (uses Gradle under the hood)
+# Run CSV-based integration tests (recommended)
+./run_integration_tests.sh
+
+# Or run JUnit integration tests
 ./run_all_tests.sh
 
-# or run the Gradle wrapper directly (works in Git Bash)
+# Or run the Gradle wrapper directly (works in Git Bash)
 ./gradlew :app:test --tests "archdesign.integration.*"
-and
 ./gradlew :app:test --tests "archdesign.integrationBox.*"
 ```
 
