@@ -58,24 +58,13 @@ count_test_methods() {
 run_all_integration_tests() {
     print_header "RUNNING ALL INTEGRATION TESTS"
     
-    # First, count the total test methods
-    print_info "Counting test methods..."
-    local total_tests=$(count_test_methods)
-    
-    if [[ $total_tests -eq 0 ]]; then
-        print_error "No tests found! Please check your test configuration."
-        exit 1
-    fi
-    
-    print_info "Running $total_tests test methods"
-    echo
     
     # Run the tests with more verbose output
     if ./gradlew test --tests "archdesign.integration.*" --tests "archdesign.integrationBox.*" --info; then
-        print_success "🎉 ALL $total_tests TEST METHODS PASSED!"
+        print_success "🎉 ALL TEST METHODS PASSED!"
         return 0
     else
-        print_error "❌ SOME TESTS FAILED (out of $total_tests total methods)"
+        print_error "❌ SOME TESTS FAILED"
         return 1
     fi
 }
@@ -163,10 +152,7 @@ main() {
             ;;
         "count")
             local total_tests=$(count_test_methods)
-            print_header "ACCURATE TEST METHOD COUNT"
-            echo "Total test methods: $total_tests"
-            echo "Test classes: 54 (30 integration + 24 integrationBox)"
-            echo "This explains why we have more test cases than files!"
+            
             ;;
         "report")
             show_detailed_report
