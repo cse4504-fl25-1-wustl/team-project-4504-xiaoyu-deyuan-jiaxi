@@ -94,13 +94,6 @@ public class Main {
         ShippingProvider provider = ShippingProvider.PLACEHOLDER;
         System.out.println("\n--- Running Packer Algorithm... ---");
 
-        // Check for test-specific system property (for backward compatibility)
-        String preferCrates = System.getProperty("packing.preferCrates");
-        if ("true".equalsIgnoreCase(preferCrates) && packingMode.equals("default")) {
-            // Legacy test mode: attempt crate-only first, then fall back
-            return processCratePreferredMode(artsToPack, provider);
-        }
-
         // Normal flow: use the constraints based on packing mode
         PackingPlan finalPlan = Packer.pack(artsToPack, constraints, provider);
 
@@ -146,56 +139,5 @@ public class Main {
                 // Use default: both boxes (STANDARD, LARGE, CRATE) and all containers
                 return new UserConstraints();
         }
-    }
-
-    /**
-     * Legacy mode for tests: attempt crate-only packing first, then fall back if needed.
-     * @param artsToPack list of arts to pack
-     * @param provider shipping provider
-     * @return ShipmentViewModel
-     */
-    private static ShipmentViewModel processCratePreferredMode(List<Art> artsToPack, ShippingProvider provider) {
-        UserConstraints crateOnly = UserConstraints.newBuilder()
-            .withAllowedContainerTypes(java.util.List.of(ContainerType.STANDARD_CRATE))
-            .build();
-
-        System.out.println("Attempting crate-only packing (test preference)...");
-        PackingPlan finalPlan = Packer.pack(artsToPack, crateOnly, provider);
-
-        // Count how many arts were actually placed in the plan
-        int packedCount = countPackedArts(finalPlan);
-
-        if (packedCount < artsToPack.size()) {
-            System.out.println("Crate-only plan packed " + packedCount + " of " + artsToPack.size() + " items — retrying with pallets allowed.");
-            UserConstraints relaxed = UserConstraints.newBuilder()
-                .withAllowedContainerTypes(java.util.List.of(
-                    ContainerType.STANDARD_CRATE,
-                    ContainerType.STANDARD_PALLET,
-                    ContainerType.OVERSIZE_PALLET
-                ))
-                .build();
-            finalPlan = Packer.pack(artsToPack, relaxed, provider);
-        }
-
-        System.out.println("\n--- Generating Response ViewModel... ---");
-        Response response = new Response(finalPlan);
-        return response.generateViewModel();
-    }
-
-    /**
-     * Count the number of arts that were successfully packed in the plan.
-     * @param plan the packing plan
-     * @return number of packed arts
-     */
-    private static int countPackedArts(PackingPlan plan) {
-        int packedCount = 0;
-        if (plan != null && plan.getContainers() != null) {
-            for (archdesign.entities.Container c : plan.getContainers()) {
-                for (archdesign.entities.Box b : c.getBoxesInContainer()) {
-                    packedCount += b.getArtsInBox().size();
-                }
-            }
-        }
-        return packedCount;
     }
 }

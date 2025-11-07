@@ -28,11 +28,13 @@ public class JsonOutputWriter {
      * @param outputFilePath The path to the output JSON file.
      */
     public void write(ShipmentViewModel viewModel, String outputFilePath) {
-        if (viewModel == null || viewModel.containers().isEmpty()) {
+        if (viewModel == null) {
             System.err.println("Warning: No packing data to write to JSON file.");
             return;
         }
 
+        // Even if containers are empty, we may have unpacked arts (custom pieces)
+        // So we should still write the JSON file
         JsonOutputSchema jsonOutput = buildJsonOutput(viewModel);
         writeToFile(jsonOutput, outputFilePath);
     }
@@ -62,11 +64,12 @@ public class JsonOutputWriter {
         jsonOutput.setStandardSizePieces(pieceStats.standardSizePieces);
         jsonOutput.setOversizedPieces(pieceStats.oversizedPieces);
 
-        // Count boxes by type, adding unpacked arts to custom_piece_count
+        // Count boxes by type
         BoxCounts boxCounts = countBoxes(viewModel);
         jsonOutput.setStandardBoxCount(boxCounts.standardBoxCount);
         jsonOutput.setLargeBoxCount(boxCounts.largeBoxCount);
-        jsonOutput.setCustomPieceCount(boxCounts.customPieceCount + unpackedArts.size());
+        // custom_piece_count is ONLY unpacked arts (not CRATE boxes)
+        jsonOutput.setCustomPieceCount(unpackedArts.size());
 
         // Count containers by type
         ContainerCounts containerCounts = countContainers(viewModel);
@@ -144,7 +147,6 @@ public class JsonOutputWriter {
     private BoxCounts countBoxes(ShipmentViewModel viewModel) {
         int standardBoxCount = 0;
         int largeBoxCount = 0;
-        int customPieceCount = 0; // UPS boxes and CRATE boxes
 
         for (ContainerViewModel container : viewModel.containers()) {
             for (BoxViewModel box : container.boxes()) {
@@ -153,14 +155,12 @@ public class JsonOutputWriter {
                     standardBoxCount++;
                 } else if (boxType.equals("LARGE")) {
                     largeBoxCount++;
-                } else {
-                    // UPS_SMALL, UPS_LARGE, or CRATE
-                    customPieceCount++;
                 }
+                // CRATE boxes are not counted in standard/large box counts
             }
         }
 
-        return new BoxCounts(standardBoxCount, largeBoxCount, customPieceCount);
+        return new BoxCounts(standardBoxCount, largeBoxCount);
     }
 
     /**
@@ -265,12 +265,10 @@ public class JsonOutputWriter {
     private static class BoxCounts {
         final int standardBoxCount;
         final int largeBoxCount;
-        final int customPieceCount;
 
-        BoxCounts(int standardBoxCount, int largeBoxCount, int customPieceCount) {
+        BoxCounts(int standardBoxCount, int largeBoxCount) {
             this.standardBoxCount = standardBoxCount;
             this.largeBoxCount = largeBoxCount;
-            this.customPieceCount = customPieceCount;
         }
     }
 

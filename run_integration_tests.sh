@@ -74,11 +74,24 @@ process_csv_files() {
             local abs_temp_output=$(cd "$test_dir" && pwd -W 2>/dev/null || pwd)/.temp_output_$$.json
         fi
         
-        # Run the Gradle application
-        if [[ "$client_config" == "crate-allowed" ]]; then
-            ./gradlew run --args="\"$abs_csv\" \"$abs_temp_output\" -crate-only" --quiet --console=plain >/dev/null 2>&1
+        # Run the Gradle application with appropriate packing mode
+        # - crate_packing: use crate-only (only crates)
+        # - pallet_packing: use box-only (only boxes and pallets, no crates)
+        # - box_packing: use box-only (only boxes and pallets, no crates)
+        local gradle_exit_code=0
+        local gradle_output=""
+        if [[ "$client_config" == "crate-only" ]]; then
+            # For crate_packing tests: only use crates
+            gradle_output=$(./gradlew run --args="$abs_csv $abs_temp_output crate-only" --quiet --console=plain 2>&1)
+            gradle_exit_code=$?
+        elif [[ "$client_config" == "box-only" ]]; then
+            # For pallet_packing and box_packing tests: only use boxes and pallets (no crates)
+            gradle_output=$(./gradlew run --args="$abs_csv $abs_temp_output box-only" --quiet --console=plain 2>&1)
+            gradle_exit_code=$?
         else
-            ./gradlew run --args="\"$abs_csv\" \"$abs_temp_output\"" --quiet --console=plain >/dev/null 2>&1
+            # For other tests or default mode: allow all box types
+            gradle_output=$(./gradlew run --args="$abs_csv $abs_temp_output" --quiet --console=plain 2>&1)
+            gradle_exit_code=$?
         fi
         
         # Check if output was produced
@@ -90,6 +103,13 @@ process_csv_files() {
             print_error "FAILED: $test_name (No output file produced)"
             print_info "Attempted to create: $temp_output"
             print_info "CSV path used: $abs_csv"
+            print_info "Temp output path: $abs_temp_output"
+            print_info "Gradle exit code: $gradle_exit_code"
+            if [[ $gradle_exit_code -ne 0 ]] || [[ -n "$gradle_output" ]]; then
+                echo ""
+                echo "Program output:"
+                echo "$gradle_output" | grep -i "error\|exception\|failed\|cannot" || echo "$gradle_output" | head -20
+            fi
             ((FAILED_TESTS++))
             rm -f "$temp_output"
             continue
@@ -229,11 +249,20 @@ main() {
         echo "#  Testing: $dir_name"
         echo "###################################"
         
-        # Determine if this is crate_packing (allow crates) or not
+        # Determine packing mode based on directory name:
+        # - crate_packing: use crate-only (only crates, no boxes/pallets)
+        # - pallet_packing: use box-only (only boxes and pallets, no crates)
+        # - box_packing: use box-only (only boxes and pallets, no crates)
         if [[ "$dir_name" == "crate_packing" ]]; then
-            process_csv_files "$dir" "crate-allowed"
+            process_csv_files "$dir" "crate-only"
+        elif [[ "$dir_name" == "pallet_packing" ]]; then
+            process_csv_files "$dir" "box-only"
+        elif [[ "$dir_name" == "box_packing" ]]; then
+            # box_packing should also use box-only mode (no crates)
+            process_csv_files "$dir" "box-only"
         else
-            process_csv_files "$dir" "no-crates"
+            # Other directories: use default mode
+            process_csv_files "$dir" "default"
         fi
     done
     

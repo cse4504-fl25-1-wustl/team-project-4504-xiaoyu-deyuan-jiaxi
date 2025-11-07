@@ -26,8 +26,8 @@ public class CratePackingShort18_2Test {
         assertNotNull(inUrl, "Input resource missing");
         Path inPath = Paths.get(inUrl.toURI());
 
-        System.setProperty("packing.preferCrates", "true");
-        ShipmentViewModel vm = Main.processFile(inPath.toString());
+        
+        ShipmentViewModel vm = Main.processFile(inPath.toString(), "crate-only");
         assertNotNull(vm, "ShipmentViewModel should not be null");
 
         int totalPieces = 0;
@@ -78,29 +78,13 @@ public class CratePackingShort18_2Test {
             assertEquals(obj.get("standard_size_pieces").getAsInt(), standardSizePieces, "standard_size_pieces mismatch");
         }
             if (obj.has("standard_pallet_count")) {
-                int expected = obj.get("standard_pallet_count").getAsInt();
-                if ("true".equalsIgnoreCase(System.getProperty("packing.preferCrates"))) {
-                    assertTrue(standardPalletCount <= expected + 2, "standard_pallet_count mismatch (tolerant)");
-                } else {
-                    assertEquals(expected, standardPalletCount, "standard_pallet_count mismatch");
-                }
+                assertEquals(obj.get("standard_pallet_count").getAsInt(), standardPalletCount, "standard_pallet_count mismatch");
             }
             if (obj.has("oversized_pallet_count")) {
-                int expected = obj.get("oversized_pallet_count").getAsInt();
-                if ("true".equalsIgnoreCase(System.getProperty("packing.preferCrates"))) {
-                    assertTrue(oversizedPalletCount <= expected + 2, "oversized_pallet_count mismatch (tolerant)");
-                } else {
-                    assertEquals(expected, oversizedPalletCount, "oversized_pallet_count mismatch");
-                }
+                assertEquals(obj.get("oversized_pallet_count").getAsInt(), oversizedPalletCount, "oversized_pallet_count mismatch");
             }
             if (obj.has("crate_count")) {
-                int expected = obj.get("crate_count").getAsInt();
-                if ("true".equalsIgnoreCase(System.getProperty("packing.preferCrates"))) {
-                    // Accept either a tolerant crate count OR the fallback with zero crates
-                    assertTrue(crateCount == 0 || (crateCount >= Math.max(0, expected - 1) && crateCount <= expected + 1), "crate_count mismatch (tolerant)");
-                } else {
-                    assertEquals(expected, crateCount, "crate_count mismatch");
-                }
+                assertEquals(obj.get("crate_count").getAsInt(), crateCount, "crate_count mismatch");
             }
 
         if (obj.has("total_artwork_weight")) {
@@ -113,6 +97,6 @@ public class CratePackingShort18_2Test {
             assertEquals(obj.get("final_shipment_weight").getAsDouble(), finalShipmentWeight, 0.5, "final_shipment_weight mismatch");
         }
 
-        System.clearProperty("packing.preferCrates");
+        
     }
 }

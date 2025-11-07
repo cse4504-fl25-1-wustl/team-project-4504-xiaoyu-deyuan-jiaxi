@@ -191,13 +191,13 @@ The project includes `run_integration_tests.sh`, a bash script that automaticall
 **How it works:**
 - Finds all `expected_output.json` files in the test resources (81 tests total)
 - For each JSON file, selects any CSV file in the same directory as input
-- Runs the application: `./gradlew run --args="<csv> actual_output.json"`
+- Runs the application with the appropriate packing mode based on test category
 - Compares the generated output with the expected output (only validates fields present in expected_output.json)
-- **Cleanup**: Automatically deletes `actual_output.json` after successful tests; keeps it for failed tests to aid debugging
-- Supports three test categories:
-  - `box_packing` (51 tests): Uses standard packing mode
-  - `pallet_packing` (12 tests): Uses standard packing mode
-  - `crate_packing` (18 tests): Uses `-crate-only` mode
+- **Cleanup**: Automatically deletes temporary output files after successful tests; keeps them for failed tests to aid debugging
+- Supports three test categories with different packing modes:
+  - `box_packing` (51 tests): Uses **default mode** (boxes and pallets only)
+  - `pallet_packing` (12 tests): Uses **`-box-only` mode** (boxes and pallets only, explicitly no crates)
+  - `crate_packing` (18 tests): Uses **`-crate-only` mode** (crates only, no boxes/pallets)
 
 **Important Notes:**
 - `expected_output.json` contains only **key validation fields**, not the complete output structure
@@ -207,7 +207,7 @@ The project includes `run_integration_tests.sh`, a bash script that automaticall
   - `large_box_count`: Number of large boxes used
   - `custom_piece_count`: Number of custom/oversized pieces
   - Additional container counts (pallets, crates) in some tests
-- Generated `actual_output.json` contains the full detailed output but is deleted after passing tests
+- Temporary output files are created in-memory and deleted immediately after validation
 
 **Run the script:**
 

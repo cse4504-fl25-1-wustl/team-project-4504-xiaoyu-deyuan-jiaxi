@@ -126,10 +126,10 @@ public final class RuleProvider {
             generateCrateRuleForSmallArt(Material.CANVAS_GALLERY, 18),
             generateCrateRuleForSmallArt(Material.MIRROR, 24),
 
-            generateCrateRuleForLargeArt(Material.GLASS, 18),
-            generateCrateRuleForLargeArt(Material.ACRYLIC, 18),
-            generateCrateRuleForLargeArt(Material.CANVAS_FRAMED, 12),
-            generateCrateRuleForLargeArt(Material.CANVAS_GALLERY, 12)
+            generateCrateRuleForLargeArt(Material.GLASS, 19),
+            generateCrateRuleForLargeArt(Material.ACRYLIC, 19),
+            generateCrateRuleForLargeArt(Material.CANVAS_FRAMED, 14),
+            generateCrateRuleForLargeArt(Material.CANVAS_GALLERY, 14)
 
         );
     }
@@ -159,16 +159,16 @@ public final class RuleProvider {
     private static BoxRuleSpecification generateCrateRuleForSmallArt(Material material, int capacity) {
         return BoxRuleSpecification.newBuilder(material.name() + " in CRATE (small)", BoxType.CRATE, capacity)
                 .forMaterial(material)
-                .withMaxWidth(33)
-                .withMaxHeight(33)
+                .withMaxWidth(36)
+                .withMaxHeight(36)
                 .build();
     }
     
     private static BoxRuleSpecification generateCrateRuleForLargeArt(Material material, int capacity) {
         return BoxRuleSpecification.newBuilder(material.name() + " in CRATE (large)", BoxType.CRATE, capacity)
                 .forMaterial(material)
-                .withMinWidth(34) // Corresponds to > 33"
-                .withMinHeight(34)
+                .withMinWidth(36.01) // Corresponds to > 36"
+                .withMinHeight(36.01)
                 .withMaxWidth(46) // If >46", it is unboxable and requires manual handling
                 .withMaxHeight(46)
                 .build();

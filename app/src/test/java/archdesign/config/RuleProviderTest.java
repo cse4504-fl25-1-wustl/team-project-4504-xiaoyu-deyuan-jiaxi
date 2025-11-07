@@ -138,7 +138,7 @@ class RuleProviderTest {
         
         // Check small art crate rules
         List<BoxRuleSpecification> smallCrateRules = crateRules.stream()
-            .filter(r -> r.getMaxWidth() <= 33 && r.getMaxHeight() <= 33)
+            .filter(r -> r.getMaxWidth() <= 36 && r.getMaxHeight() <= 36)
             .toList();
         assertFalse(smallCrateRules.isEmpty(), "Should have crate rules for small art");
 

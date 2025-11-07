@@ -33,18 +33,17 @@ public class CratePacking14Test {
         Path inPath = Paths.get(inUrl.toURI());
 
         // Run the application processing function (deterministic, no interactive prompts)
-        System.setProperty("packing.preferCrates", "true");
-        ShipmentViewModel vm = Main.processFile(inPath.toString());
+        ShipmentViewModel vm = Main.processFile(inPath.toString(), "crate-only");
         assertNotNull(vm, "ShipmentViewModel should not be null");
 
-            // Compute derived metrics from the ViewModel
-            int totalPieces = 0;
-            int standardSizePieces = 0;
-            Map<String, Integer> oversizeMap = new LinkedHashMap<>();
-            int standardPalletCount = 0;
-            int oversizedPalletCount = 0;
-            int crateCount = 0;
-            double totalArtworkWeight = 0.0;
+        // Compute derived metrics from the ViewModel
+        int totalPieces = 0;
+        int standardSizePieces = 0;
+        Map<String, Integer> oversizeMap = new LinkedHashMap<>();
+        int standardPalletCount = 0;
+        int oversizedPalletCount = 0;
+        int crateCount = 0;
+        double totalArtworkWeight = 0.0;
 
             for (ContainerViewModel container : vm.containers()) {
                 String t = container.type();
@@ -88,34 +87,16 @@ public class CratePacking14Test {
                 assertEquals(obj.get("standard_size_pieces").getAsInt(), standardSizePieces, "standard_size_pieces mismatch");
             }
             if (obj.has("standard_pallet_count")) {
-                int expected = obj.get("standard_pallet_count").getAsInt();
-                if ("true".equalsIgnoreCase(System.getProperty("packing.preferCrates"))) {
-                    // allow one pallet as a fallback when tests request crate preference
-                    assertTrue(standardPalletCount <= expected + 1, "standard_pallet_count mismatch (tolerant)");
-                } else {
-                    assertEquals(expected, standardPalletCount, "standard_pallet_count mismatch");
-                }
+                assertEquals(obj.get("standard_pallet_count").getAsInt(), standardPalletCount, "standard_pallet_count mismatch");
             }
             if (obj.has("oversized_pallet_count")) {
-                int expected = obj.get("oversized_pallet_count").getAsInt();
-                if ("true".equalsIgnoreCase(System.getProperty("packing.preferCrates"))) {
-                    assertTrue(oversizedPalletCount <= expected + 1, "oversized_pallet_count mismatch (tolerant)");
-                } else {
-                    assertEquals(expected, oversizedPalletCount, "oversized_pallet_count mismatch");
-                }
+                assertEquals(obj.get("oversized_pallet_count").getAsInt(), oversizedPalletCount, "oversized_pallet_count mismatch");
             }
             if (obj.has("crate_count")) {
-                int expected = obj.get("crate_count").getAsInt();
-                if ("true".equalsIgnoreCase(System.getProperty("packing.preferCrates"))) {
-                    assertTrue(crateCount == expected || crateCount == expected + 1, "crate_count mismatch (tolerant)");
-                } else {
-                    assertEquals(expected, crateCount, "crate_count mismatch");
-                }
+                assertEquals(obj.get("crate_count").getAsInt(), crateCount, "crate_count mismatch");
             }
 
             // Optional: check artwork and packaging weight if present in golden file
-            System.clearProperty("packing.preferCrates");
-
             if (obj.has("total_artwork_weight")) {
                 assertEquals(obj.get("total_artwork_weight").getAsDouble(), totalArtworkWeight, 0.5, "total_artwork_weight mismatch");
             }
@@ -125,8 +106,5 @@ public class CratePacking14Test {
             if (obj.has("final_shipment_weight")) {
                 assertEquals(obj.get("final_shipment_weight").getAsDouble(), finalShipmentWeight, 0.5, "final_shipment_weight mismatch");
             }
-        
-        // clear test-only system property
-        System.clearProperty("packing.preferCrates");
     }
 }

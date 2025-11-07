@@ -26,7 +26,7 @@ public class CratePackingSame19_2Test {
         assertNotNull(inUrl, "Input resource missing");
         Path inPath = Paths.get(inUrl.toURI());
 
-        ShipmentViewModel vm = Main.processFile(inPath.toString());
+        ShipmentViewModel vm = Main.processFile(inPath.toString(), "crate-only");
         assertNotNull(vm, "ShipmentViewModel should not be null");
 
         int totalPieces = 0;
