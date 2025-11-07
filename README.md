@@ -182,6 +182,27 @@ Notes:
 start "" "app\\build\\reports\\tests\\test\\index.html"
 ```
 
+### Running with Git Bash 
+
+```bash
+# run the project's test helper (uses Gradle under the hood)
+./run_all_tests.sh
+
+# or run the Gradle wrapper directly (works in Git Bash)
+./gradlew :app:test --tests "archdesign.integration.*"
+and
+./gradlew :app:test --tests "archdesign.integrationBox.*"
+```
+
+Notes:
+- If `./gradlew` complains about permissions, make it executable once: `chmod +x gradlew`.
+- You can still use `gradlew.bat` from PowerShell or cmd.exe; use whichever shell you prefer.
+- To open the HTML test report from Git Bash (Windows):
+
+```bash
+cmd.exe /c start "" app\\build\\reports\\tests\\test\\index.html
+```
+
 ### Feature
 
 Xiaoyu: Algorithm fix, main args & cli & .json presenter implementation
