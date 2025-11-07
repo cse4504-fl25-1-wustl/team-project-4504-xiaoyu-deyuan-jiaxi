@@ -34,14 +34,18 @@ public class StandardBox_1Standard2LargeTest {
         int oversizedPalletCount = 0;
 
         for (ContainerViewModel container : vm.containers()) {
-            String type = container.type();
-            if ("STANDARD_BOX".equals(type)) standardBoxCount++;
-            else if ("LARGE_BOX".equals(type)) largeBoxCount++;
-            else if ("STANDARD_CRATE".equals(type)) crateCount++;
-            else if ("STANDARD_PALLET".equals(type)) standardPalletCount++;
-            else if ("OVERSIZE_PALLET".equals(type)) oversizedPalletCount++;
+            String containerType = container.type();
+            // Count container types
+            if ("STANDARD_PALLET".equals(containerType)) standardPalletCount++;
+            else if ("OVERSIZE_PALLET".equals(containerType)) oversizedPalletCount++;
 
+            // Count box types within each container
             for (BoxViewModel box : container.boxes()) {
+                String boxType = box.type();
+                if ("STANDARD".equals(boxType)) standardBoxCount++;
+                else if ("LARGE".equals(boxType)) largeBoxCount++;
+                else if ("CRATE".equals(boxType)) crateCount++;
+                
                 totalPieces += box.arts().size();
             }
         }
