@@ -308,7 +308,13 @@ public class OptimizationService {
             }
         }
 
-        return containers;
+        // Filter out empty containers (containers with no boxes)
+        // This can happen when OR-Tools overestimates the number of containers needed
+        List<Container> nonEmptyContainers = containers.stream()
+            .filter(container -> !container.getBoxesInContainer().isEmpty())
+            .collect(Collectors.toList());
+
+        return nonEmptyContainers;
     }
 
     // Fallback method with unpacked arts tracking

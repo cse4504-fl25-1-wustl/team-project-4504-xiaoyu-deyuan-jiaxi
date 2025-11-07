@@ -35,9 +35,9 @@ public class BoxRuleSpecificationTest {
         assertEquals("minimal", rule.getDescription());
         assertNull(rule.getMaterial());
         assertEquals(0, rule.getMinWidth());
-        assertEquals(Integer.MAX_VALUE, rule.getMaxWidth());
+        assertEquals(Double.MAX_VALUE, rule.getMaxWidth(), "Default maxWidth should be Double.MAX_VALUE");
         assertEquals(0, rule.getMinHeight());
-        assertEquals(Integer.MAX_VALUE, rule.getMaxHeight());
+        assertEquals(Double.MAX_VALUE, rule.getMaxHeight(), "Default maxHeight should be Double.MAX_VALUE");
         assertEquals(BoxType.LARGE, rule.getAllowedBoxType());
         assertEquals(1, rule.getCapacity());
     }

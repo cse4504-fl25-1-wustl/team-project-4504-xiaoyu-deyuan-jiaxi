@@ -119,31 +119,93 @@ public class ConsoleOutputFormatter {
             }
         }
 
+        // Count box types (excluding crate boxes as they are virtual)
+        int standardBoxCount = 0;
+        int largeBoxCount = 0;
+        
+        for (ContainerViewModel container : viewModel.containers()) {
+            for (BoxViewModel box : container.boxes()) {
+                String boxType = box.type();
+                if ("STANDARD".equals(boxType)) {
+                    standardBoxCount++;
+                } else if ("LARGE".equals(boxType)) {
+                    largeBoxCount++;
+                }
+                // CRATE boxes are not counted as they are virtual
+            }
+        }
+        
+        // Count container types
+        int standardPalletCount = 0;
+        int oversizedPalletCount = 0;
+        int crateContainerCount = 0;
+        
+        for (ContainerViewModel container : viewModel.containers()) {
+            String containerType = container.type();
+            if ("STANDARD_PALLET".equals(containerType) || "GLASS_PALLET".equals(containerType)) {
+                standardPalletCount++;
+            } else if ("OVERSIZE_PALLET".equals(containerType)) {
+                oversizedPalletCount++;
+            } else if ("STANDARD_CRATE".equals(containerType)) {
+                crateContainerCount++;
+            }
+        }
+
+        // Get unpacked arts (custom pieces)
+        int customPieceCount = viewModel.unpackedArts().size();
+        
+        // Add unpacked arts weight to total artwork weight
+        for (ArtViewModel unpackedArt : viewModel.unpackedArts()) {
+            totalArtworkWeight += unpackedArt.weight();
+        }
+
         double finalShipmentWeight = viewModel.totalWeight();
         double totalPackagingWeight = finalShipmentWeight - totalArtworkWeight;
 
-        System.out.println("Work Order Summary:");
-        System.out.println("- Total Pieces: " + totalPieces);
-        System.out.println("- Standard Size Pieces: " + standardPieces);
-        System.out.println("- Oversized Pieces: " + 
+        System.out.println("\n=== SHIPMENT SUMMARY ===");
+        System.out.println();
+        
+        // Piece counts
+        System.out.println("ARTWORK PIECES:");
+        System.out.println("  Total Pieces: " + (totalPieces + customPieceCount));
+        System.out.println("  Standard Size Pieces: " + standardPieces);
+        System.out.println("  Oversized Pieces: " + 
             oversizeMap.values().stream().mapToInt(g -> g.qty).sum());
         
         if (!oversizeMap.isEmpty()) {
             for (Map.Entry<String, OversizeGroup> entry : oversizeMap.entrySet()) {
                 OversizeGroup g = entry.getValue();
-                System.out.println("   * " + entry.getKey() + 
-                    " (Qty: " + g.qty + ") = " + 
-                    String.format("%.0f", g.totalWeight) + " lbs");
+                System.out.println("    - " + entry.getKey() + 
+                    " (Quantity: " + g.qty + ", Weight: " + 
+                    String.format("%.0f", g.totalWeight) + " lbs)");
             }
         }
-
         System.out.println();
-        System.out.println("Total Artwork Weight: " + 
+        
+        // Box counts
+        System.out.println("PACKAGING:");
+        System.out.println("  Standard Box Count: " + standardBoxCount);
+        System.out.println("  Large Box Count: " + largeBoxCount);
+        System.out.println("  Custom Piece Count: " + customPieceCount);
+        System.out.println();
+        
+        // Container counts
+        System.out.println("CONTAINERS:");
+        System.out.println("  Standard Pallet Count: " + standardPalletCount);
+        System.out.println("  Oversized Pallet Count: " + oversizedPalletCount);
+        System.out.println("  Crate Container Count: " + crateContainerCount);
+        System.out.println();
+        
+        // Weights
+        System.out.println("WEIGHT BREAKDOWN:");
+        System.out.println("  Total Artwork Weight: " + 
             String.format("%.0f", totalArtworkWeight) + " lbs");
-        System.out.println("Total Packaging Weight: " + 
+        System.out.println("  Total Packaging Weight: " + 
             String.format("%.0f", totalPackagingWeight) + " lbs");
-        System.out.println("Final Shipment Weight: " + 
+        System.out.println("  Final Shipment Weight: " + 
             String.format("%.0f", finalShipmentWeight) + " lbs");
+        System.out.println();
+        System.out.println("========================");
     }
 
     /**

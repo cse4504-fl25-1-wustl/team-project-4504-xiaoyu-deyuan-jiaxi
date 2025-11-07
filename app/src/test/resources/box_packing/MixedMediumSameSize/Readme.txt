@@ -17,3 +17,7 @@ You should first update the input.csv file to replace X and Y in the second colu
 Then fill in expectedoutput.json with the correct values for that input. Create a text file in the subdirectory and provide a brief justification for your answer based on what you learn from the client
 
 The Large folder is effectively the same, however the art pieces are 43 x 43 instead meaning they must be packed in Large boxes. Large boxes have a larger width (13 inches instead of 11 for standard boxes). Work through the same steps for each subdirectory/test case in the Large folder.
+
+---------------------------------
+Rule: Generally, if a box contains a 4-piece type art (acoustic panels and canvases), we can only fit 4 inside; if a box contains a 6-piece type art but no 4-piece type, we can only fit 4 inside and so on.
+But the only goal is to minimize the weight, and boxes are weightless, so google solver may give different results...

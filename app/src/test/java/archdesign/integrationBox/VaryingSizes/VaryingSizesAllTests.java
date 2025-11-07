@@ -60,21 +60,23 @@ public class VaryingSizesAllTests {
         Path inputPath = Paths.get(inputUrl.toURI());
         Path expectedPath = Paths.get(expectedUrl.toURI());
 
-        // 2️⃣ Run main packing algorithm
-        ShipmentViewModel vm = Main.processFile(inputPath.toString());
+        // 2️⃣ Run main packing algorithm with box-only mode (integration box tests don't use crates)
+        ShipmentViewModel vm = Main.processFile(inputPath.toString(), "box-only");
 
         // 3️⃣ Read expected_output.json
         JsonObject expected = JsonParser.parseString(Files.readString(expectedPath)).getAsJsonObject();
         int expectedStandard = expected.get("standard_box_count").getAsInt();
         int expectedLarge = expected.get("large_box_count").getAsInt();
         int expectedCrate = expected.has("crate_count") ? expected.get("crate_count").getAsInt() : 0;
+        int expectedCustom = expected.has("custom_piece_count") ? expected.get("custom_piece_count").getAsInt() : 0;
         int expectedTotal = expected.get("total_pieces").getAsInt();
 
         // 4️⃣ Gather actual result
         int standardBoxCount = 0;
         int largeBoxCount = 0;
         int crateCount = 0;
-        int totalPieces = 0;
+        int totalPackedPieces = 0;
+        int customPieceCount = vm.unpackedArts().size();
         List<String> debug = new ArrayList<>();
 
         for (ContainerViewModel container : vm.containers()) {
@@ -86,7 +88,7 @@ public class VaryingSizesAllTests {
                 else if ("CRATE".equals(bt)) crateCount++;
 
                 debug.add("    Box: " + bt + " (" + box.arts().size() + " art pieces)");
-                for (ArtViewModel art : box.arts()) totalPieces++;
+                for (ArtViewModel art : box.arts()) totalPackedPieces++;
             }
         }
 
@@ -96,13 +98,16 @@ public class VaryingSizesAllTests {
         System.out.println("standard_box_count = " + standardBoxCount);
         System.out.println("large_box_count = " + largeBoxCount);
         System.out.println("crate_count = " + crateCount);
-        System.out.println("total_pieces = " + totalPieces);
+        System.out.println("custom_piece_count = " + customPieceCount);
+        System.out.println("total_packed_pieces = " + totalPackedPieces);
         System.out.println("------------------------");
 
         // 6️⃣ Assertions
         assertEquals(expectedStandard, standardBoxCount, "standard_box_count mismatch in " + folderName);
         assertEquals(expectedLarge, largeBoxCount, "large_box_count mismatch in " + folderName);
         assertEquals(expectedCrate, crateCount, "crate_count mismatch in " + folderName);
-        assertEquals(expectedTotal, totalPieces, "total_pieces mismatch in " + folderName);
+        assertEquals(expectedCustom, customPieceCount, "custom_piece_count mismatch in " + folderName);
+        // total_pieces in expected_output includes both packed and custom pieces
+        assertEquals(expectedTotal, totalPackedPieces + customPieceCount, "total_pieces mismatch in " + folderName);
     }
 }
