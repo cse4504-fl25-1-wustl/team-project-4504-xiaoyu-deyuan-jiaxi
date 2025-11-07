@@ -18,6 +18,7 @@ import com.google.ortools.linearsolver.MPVariable;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import archdesign.entities.enums.Material;
 
 /**
  * Optimization service - directly optimize selection of Container types
@@ -51,10 +52,12 @@ public class OptimizationService {
 
             solver.setTimeLimit(60000); // 60 seconds time limit
 
-            // Step 1: analyze the box requirements for each art
+            // Step 1: analyze the box requirements for each art with smart material grouping
             List<ArtBoxRequirement> artRequirements = new ArrayList<>();
             List<Art> unpackedArts = new ArrayList<>();
             
+            // First pass: collect all arts with their options
+            Map<Art, List<PackingOption>> artOptionsMap = new LinkedHashMap<>();
             for (Art art : artsToPack) {
                 // First check if art is physically packable based on hard limits
                 if (!RuleProvider.isPackable(art)) {
@@ -71,8 +74,12 @@ public class OptimizationService {
                     unpackedArts.add(art);
                     continue;
                 }
-                artRequirements.add(new ArtBoxRequirement(art, options.get(0)));
+                artOptionsMap.put(art, options);
             }
+            
+            // Smart optimization: try to find common box types for same material
+            artRequirements = optimizeBoxSelectionByMaterial(artOptionsMap);
+            
 
             // Step 2: group arts by BoxType and compute the number of boxes needed
             Map<BoxType, Integer> boxesNeeded = calculateBoxesNeeded(artRequirements);
@@ -173,6 +180,111 @@ public class OptimizationService {
     }
 
     /**
+     * Optimize box selection by grouping arts by material and finding common box types.
+     * This allows different-sized artwork of the same material to be packed in larger boxes together.
+     */
+    private List<ArtBoxRequirement> optimizeBoxSelectionByMaterial(Map<Art, List<PackingOption>> artOptionsMap) {
+        List<ArtBoxRequirement> requirements = new ArrayList<>();
+        
+        // Group arts by material
+        Map<Material, List<Art>> artsByMaterial = new LinkedHashMap<>();
+        for (Art art : artOptionsMap.keySet()) {
+            artsByMaterial.computeIfAbsent(art.getMaterial(), k -> new ArrayList<>()).add(art);
+        }
+        
+        // For each material group, try to find a common box type
+        for (Map.Entry<Material, List<Art>> entry : artsByMaterial.entrySet()) {
+            List<Art> artsOfMaterial = entry.getValue();
+            
+            // Check if we have mixed sizes (different dimensions) for this material
+            boolean hasMixedSizes = artsOfMaterial.stream()
+                .map(art -> art.getWidth() + "x" + art.getHeight())
+                .distinct()
+                .count() > 1;
+            
+            // Only apply optimization if we have mixed sizes
+            if (!hasMixedSizes) {
+                // All same size, use first option for each art (original behavior)
+                for (Art art : artsOfMaterial) {
+                    List<PackingOption> options = artOptionsMap.get(art);
+                    requirements.add(new ArtBoxRequirement(art, options.get(0)));
+                }
+                continue;
+            }
+            
+            // Find common box types that can fit ALL arts of this material
+            Set<BoxType> commonBoxTypes = null;
+            for (Art art : artsOfMaterial) {
+                Set<BoxType> artBoxTypes = artOptionsMap.get(art).stream()
+                    .map(PackingOption::boxType)
+                    .collect(Collectors.toSet());
+                
+                if (commonBoxTypes == null) {
+                    commonBoxTypes = new HashSet<>(artBoxTypes);
+                } else {
+                    commonBoxTypes.retainAll(artBoxTypes);
+                }
+            }
+            
+            // If there's a common box type, prefer the largest one (LARGE > STANDARD)
+            // This allows us to pack different sizes together
+            if (commonBoxTypes != null && !commonBoxTypes.isEmpty()) {
+                // Priority order: LARGE > STANDARD > CRATE
+                BoxType finalChosenBoxType;
+                int chosenCapacity;
+                
+                if (commonBoxTypes.contains(BoxType.LARGE)) {
+                    finalChosenBoxType = BoxType.LARGE;
+                } else if (commonBoxTypes.contains(BoxType.STANDARD)) {
+                    finalChosenBoxType = BoxType.STANDARD;
+                } else if (commonBoxTypes.contains(BoxType.CRATE)) {
+                    finalChosenBoxType = BoxType.CRATE;
+                } else {
+                    finalChosenBoxType = commonBoxTypes.iterator().next();
+                }
+                
+                // Get the capacity for this box type from the first art's options
+                chosenCapacity = artOptionsMap.get(artsOfMaterial.get(0)).stream()
+                    .filter(opt -> opt.boxType() == finalChosenBoxType)
+                    .findFirst()
+                    .map(PackingOption::capacity)
+                    .orElse(Integer.MAX_VALUE);
+                
+                // Only use common box type if it helps consolidation
+                // i.e., if all arts can fit in fewer boxes of this type than separate types
+                boolean useCommonBoxType = artsOfMaterial.size() <= chosenCapacity;
+                
+                // Assign box type to all arts of this material
+                for (Art art : artsOfMaterial) {
+                    List<PackingOption> options = artOptionsMap.get(art);
+                    PackingOption selectedOption;
+                    
+                    if (useCommonBoxType) {
+                        // Find the option matching our chosen box type
+                        selectedOption = options.stream()
+                            .filter(opt -> opt.boxType() == finalChosenBoxType)
+                            .findFirst()
+                            .orElse(options.get(0)); // Fallback to first option if not found
+                    } else {
+                        // Too many arts for consolidation, use first available option per art
+                        selectedOption = options.get(0);
+                    }
+                    
+                    requirements.add(new ArtBoxRequirement(art, selectedOption));
+                }
+            } else {
+                // No common box type, use first available option for each art
+                for (Art art : artsOfMaterial) {
+                    List<PackingOption> options = artOptionsMap.get(art);
+                    requirements.add(new ArtBoxRequirement(art, options.get(0)));
+                }
+            }
+        }
+        
+        return requirements;
+    }
+
+    /**
      * Calculate how many boxes are needed
      */
     private Map<BoxType, Integer> calculateBoxesNeeded(List<ArtBoxRequirement> requirements) {
@@ -248,7 +360,6 @@ public class OptimizationService {
         for (Map.Entry<ContainerType, Integer> entry : solution.entrySet()) {
             ContainerType containerType = entry.getKey();
             int count = entry.getValue();
-            Map<BoxType, Integer> capacities = containerCapacities.get(containerType);
 
             // create count number of this container type
            
