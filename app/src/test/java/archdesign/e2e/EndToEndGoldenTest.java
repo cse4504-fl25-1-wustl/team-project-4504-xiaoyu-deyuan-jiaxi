@@ -72,40 +72,44 @@ public class EndToEndGoldenTest {
     assertNotNull(csv, "CSV output should not be null");
     assertFalse(csv.trim().isEmpty(), "CSV output should not be empty for Input1.csv");
 
-        java.util.List<archdesign.response.ArtViewModel> allArts = new java.util.ArrayList<>();
-        vm.containers().forEach(container -> container.boxes().forEach(box -> allArts.addAll(box.arts())));
+        // Collect packed and unpacked arts
+        java.util.List<archdesign.response.ArtViewModel> packedArts = new java.util.ArrayList<>();
+        vm.containers().forEach(container -> container.boxes().forEach(box -> packedArts.addAll(box.arts())));
+        java.util.List<archdesign.response.ArtViewModel> unpackedArts = vm.unpackedArts();
 
-        int totalPieces = allArts.size();
-        double totalArtworkWeight = allArts.stream().mapToDouble(a -> a.weight()).sum();
-        int standardPieces = (int) allArts.stream().filter(a -> !(a.width() > 44 || a.height() > 44)).count();
-        java.util.Map<String, int[]> oversize = new java.util.LinkedHashMap<>();
-        java.util.Map<String, Double> oversizeWeight = new java.util.LinkedHashMap<>();
-        for (archdesign.response.ArtViewModel a : allArts) {
+        int packedPieces = packedArts.size();
+        int unpackedPieces = unpackedArts.size();
+        int totalPieces = packedPieces + unpackedPieces;
+        
+        double packedArtworkWeight = packedArts.stream().mapToDouble(a -> a.weight()).sum();
+        double unpackedArtworkWeight = unpackedArts.stream().mapToDouble(a -> a.weight()).sum();
+        double totalArtworkWeight = packedArtworkWeight + unpackedArtworkWeight;
+        
+        int standardPieces = (int) packedArts.stream().filter(a -> !(a.width() > 44 || a.height() > 44)).count();
+        java.util.Map<String, int[]> oversizePacked = new java.util.LinkedHashMap<>();
+        java.util.Map<String, Double> oversizePackedWeight = new java.util.LinkedHashMap<>();
+        for (archdesign.response.ArtViewModel a : packedArts) {
             if (a.width() > 44 || a.height() > 44) {
                 String dims = a.width() + "\" x " + a.height() + "\"";
-                oversize.computeIfAbsent(dims, k -> new int[]{0})[0]++;
-                oversizeWeight.put(dims, oversizeWeight.getOrDefault(dims, 0.0) + a.weight());
+                oversizePacked.computeIfAbsent(dims, k -> new int[]{0})[0]++;
+                oversizePackedWeight.put(dims, oversizePackedWeight.getOrDefault(dims, 0.0) + a.weight());
             }
         }
 
+        // With new rules: all Input1 arts are packable (max dimension is 56" which is < 88", and at least one dimension <= 46")
         assertEquals(55, totalPieces, "Total pieces should be 55");
-        assertEquals(49, standardPieces, "Standard size pieces should be 49");
-        int oversizedPieces = oversize.values().stream().mapToInt(arr -> arr[0]).sum();
-        assertEquals(6, oversizedPieces, "Oversized pieces should be 6");
+        assertEquals(55, packedPieces, "All pieces should be packed (largest is 32x56, one dimension <= 46)");
+        assertEquals(0, unpackedPieces, "No unpacked pieces (all dimensions meet packaging limits)");
+        
+        assertEquals(49, standardPieces, "Standard size packed pieces should be 49");
+        int oversizedPackedPieces = oversizePacked.values().stream().mapToInt(arr -> arr[0]).sum();
+        assertEquals(6, oversizedPackedPieces, "Oversized packed pieces should be 6");
 
-        // Check specific oversize groups and their total weights (rounded to integer)
-        assertTrue(oversize.containsKey("34\" x 46\""), "Should contain oversize group 34\" x 46\"");
-        assertEquals(2, oversize.get("34\" x 46\"")[0], "Qty for 34\" x 46\" should be 2");
-        assertEquals(32, Math.round(oversizeWeight.get("34\" x 46\"") == null ? 0 : oversizeWeight.get("34\" x 46\"").doubleValue()), "Total weight for 34\" x 46\" should be 32 lbs");
+        // Check specific packed oversize groups - all can be packed with crate rotation
+        assertTrue(oversizePacked.containsKey("34.0\" x 46.0\""), "Should contain packed oversize group 34\" x 46\"");
+        assertEquals(2, oversizePacked.get("34.0\" x 46.0\"")[0], "Qty for packed 34\" x 46\" should be 2");
 
-        assertTrue(oversize.containsKey("32\" x 56\""), "Should contain oversize group 32\" x 56\"");
-        assertEquals(1, oversize.get("32\" x 56\"")[0], "Qty for 32\" x 56\" should be 1");
-        assertEquals(18, Math.round(oversizeWeight.get("32\" x 56\"") == null ? 0 : oversizeWeight.get("32\" x 56\"").doubleValue()), "Total weight for 32\" x 56\" should be 18 lbs");
-
-        assertTrue(oversize.containsKey("32\" x 48\""), "Should contain oversize group 32\" x 48\"");
-        assertEquals(3, oversize.get("32\" x 48\"")[0], "Qty for 32\" x 48\" should be 3");
-        assertEquals(48, Math.round(oversizeWeight.get("32\" x 48\"") == null ? 0 : oversizeWeight.get("32\" x 48\"").doubleValue()), "Total weight for 32\" x 48\" should be 48 lbs");
-
+        // Weight validation
         assertEquals(784, Math.round(totalArtworkWeight), "Total Artwork Weight should be 784 lbs");
         double finalShipmentWeight = vm.totalWeight();
         double totalPackagingWeight = finalShipmentWeight - totalArtworkWeight;
@@ -195,42 +199,26 @@ public class EndToEndGoldenTest {
         ShipmentViewModel vm = Main.processFile(input.toString());
         assertNotNull(vm, "Processing returned null view model for Input3.csv");
 
-        java.util.List<archdesign.response.ArtViewModel> allArts = new java.util.ArrayList<>();
-        vm.containers().forEach(container -> container.boxes().forEach(box -> allArts.addAll(box.arts())));
+        // Collect packed and unpacked arts
+        java.util.List<archdesign.response.ArtViewModel> packedArts = new java.util.ArrayList<>();
+        vm.containers().forEach(container -> container.boxes().forEach(box -> packedArts.addAll(box.arts())));
+        java.util.List<archdesign.response.ArtViewModel> unpackedArts = vm.unpackedArts();
 
-        int totalPieces = allArts.size();
-        double totalArtworkWeight = allArts.stream().mapToDouble(a -> a.weight()).sum();
-        int standardPieces = (int) allArts.stream().filter(a -> !(a.width() > 44 || a.height() > 44)).count();
+        int packedPieces = packedArts.size();
+        int unpackedPieces = unpackedArts.size();
+        int totalPieces = packedPieces + unpackedPieces;
+        
+        double totalArtworkWeight = packedArts.stream().mapToDouble(a -> a.weight()).sum() + 
+                                   unpackedArts.stream().mapToDouble(a -> a.weight()).sum();
+        
+        int standardPieces = (int) packedArts.stream().filter(a -> !(a.width() > 44 || a.height() > 44)).count();
 
+        // With new rules: all Input3 arts are packable (max dimension is 55" which is < 88", and at least one dimension <= 46")
+        // 11 standard (33x43), 1 oversized (31x55), 1 oversized (34x47) - all packable
         assertEquals(13, totalPieces, "Total pieces should be 13 for Input3.csv");
+        assertEquals(13, packedPieces, "All pieces should be packed (largest is 31x55, one dimension <= 46)");
+        assertEquals(0, unpackedPieces, "No unpacked pieces (all dimensions meet packaging limits)");
         assertEquals(11, standardPieces, "Standard size pieces should be 11 for Input3.csv");
-
-        java.util.Map<String, Integer> oversizeCount = new java.util.LinkedHashMap<>();
-        java.util.Map<String, Double> oversizeWeight = new java.util.LinkedHashMap<>();
-        for (archdesign.response.ArtViewModel a : allArts) {
-            if (a.width() > 44 || a.height() > 44) {
-                String dims = a.width() + "\" x " + a.height() + "\"";
-                oversizeCount.put(dims, oversizeCount.getOrDefault(dims, 0) + 1);
-                oversizeWeight.put(dims, oversizeWeight.getOrDefault(dims, 0.0) + a.weight());
-            }
-        }
-
-        // Accept either orientation for the dims key (e.g., 55" x 31" or 31" x 55")
-        String key55 = null;
-        for (String k : oversizeCount.keySet()) {
-            if (k.equals("55\" x 31\"") || k.equals("31\" x 55\"")) { key55 = k; break; }
-        }
-        assertNotNull(key55, "Should contain oversize 55\" x 31\" in either orientation");
-        assertEquals(1, oversizeCount.get(key55).intValue(), "Qty for 55\" x 31\" should be 1");
-        assertEquals(17, Math.round(oversizeWeight.get(key55) == null ? 0 : oversizeWeight.get(key55).doubleValue()), "Rounded weight for 55\" x 31\" should be 17 lbs");
-
-        String key47 = null;
-        for (String k : oversizeCount.keySet()) {
-            if (k.equals("47\" x 34\"") || k.equals("34\" x 47\"")) { key47 = k; break; }
-        }
-        assertNotNull(key47, "Should contain oversize 47\" x 34\" in either orientation");
-        assertEquals(1, oversizeCount.get(key47).intValue(), "Qty for 47\" x 34\" should be 1");
-        assertEquals(16, Math.round(oversizeWeight.get(key47) == null ? 0 : oversizeWeight.get(key47).doubleValue()), "Rounded weight for 47\" x 34\" should be 16 lbs");
 
         assertEquals(187, Math.round(totalArtworkWeight), "Total Artwork Weight should be 187 lbs");
         double finalShipmentWeight = vm.totalWeight();

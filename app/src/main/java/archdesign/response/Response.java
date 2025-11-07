@@ -34,6 +34,10 @@ public class Response {
                 .map(this::convertContainerToViewModel)
                 .collect(Collectors.toList());
         
+        var unpackedArtVMs = plan.getUnpackedArts().stream()
+                .map(this::convertArtToViewModel)
+                .collect(Collectors.toList());
+        
         int totalBoxes = containerVMs.stream()
                 .mapToInt(cvm -> cvm.boxes().size())
                 .sum();
@@ -43,7 +47,8 @@ public class Response {
             plan.getTotalCost(),
             plan.getContainers().size(),
             totalBoxes,
-            containerVMs
+            containerVMs,
+            unpackedArtVMs
         );
     }
 

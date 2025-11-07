@@ -19,14 +19,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test for VaryingSizes/43x88.5
- * ✅ Expected: LARGE box (height 88.5 → ceil 89 > 43)
+ * ✅ Expected: UNPACKABLE (height 88.5 > 88" hard limit)
+ * Should be counted as custom_piece
  */
 public class Size43x88_5Test {
 
     private static final String BASE_DIR = "/box_packing/VaryingSizes/43x88.5";
 
     @Test
-    public void test_43x88_5_LargeBox() throws Exception {
+    public void test_43x88_5_CustomPiece() throws Exception {
         System.out.println(">>> Running test for folder: 43x88.5");
 
         // 1️⃣ Load input and expected_output
@@ -38,21 +39,23 @@ public class Size43x88_5Test {
         Path inputPath = Paths.get(inputUrl.toURI());
         Path expectedPath = Paths.get(expectedUrl.toURI());
 
-        // 2️⃣ Run program
-        ShipmentViewModel vm = Main.processFile(inputPath.toString());
+        // 2️⃣ Run program with box-only mode (no crates for integration box tests)
+        ShipmentViewModel vm = Main.processFile(inputPath.toString(), "box-only");
 
         // 3️⃣ Read expected_output.json
         JsonObject expected = JsonParser.parseString(Files.readString(expectedPath)).getAsJsonObject();
         int expectedStandard = expected.get("standard_box_count").getAsInt();
         int expectedLarge = expected.get("large_box_count").getAsInt();
         int expectedCrate = expected.has("crate_count") ? expected.get("crate_count").getAsInt() : 0;
+        int expectedCustom = expected.has("custom_piece_count") ? expected.get("custom_piece_count").getAsInt() : 0;
         int expectedTotal = expected.get("total_pieces").getAsInt();
 
         // 4️⃣ Collect actual stats
         int standardBoxCount = 0;
         int largeBoxCount = 0;
         int crateCount = 0;
-        int totalPieces = 0;
+        int totalPackedPieces = 0;
+        int customPieceCount = vm.unpackedArts().size();
         List<String> debug = new ArrayList<>();
 
         for (ContainerViewModel container : vm.containers()) {
@@ -64,7 +67,7 @@ public class Size43x88_5Test {
                 else if ("CRATE".equals(bt)) crateCount++;
 
                 debug.add("    Box: " + bt + " (" + box.arts().size() + " art pieces)");
-                for (ArtViewModel art : box.arts()) totalPieces++;
+                for (ArtViewModel art : box.arts()) totalPackedPieces++;
             }
         }
 
@@ -74,13 +77,16 @@ public class Size43x88_5Test {
         System.out.println("standard_box_count = " + standardBoxCount);
         System.out.println("large_box_count = " + largeBoxCount);
         System.out.println("crate_count = " + crateCount);
-        System.out.println("total_pieces = " + totalPieces);
+        System.out.println("custom_piece_count = " + customPieceCount);
+        System.out.println("total_packed_pieces = " + totalPackedPieces);
         System.out.println("------------------------");
 
         // 6️⃣ Assertions
         assertEquals(expectedStandard, standardBoxCount, "standard_box_count mismatch");
         assertEquals(expectedLarge, largeBoxCount, "large_box_count mismatch");
         assertEquals(expectedCrate, crateCount, "crate_count mismatch");
-        assertEquals(expectedTotal, totalPieces, "total_pieces mismatch");
+        assertEquals(expectedCustom, customPieceCount, "custom_piece_count mismatch");
+        // total_pieces in expected_output.json includes both packed and custom pieces
+        assertEquals(expectedTotal, totalPackedPieces + customPieceCount, "total_pieces mismatch");
     }
 }

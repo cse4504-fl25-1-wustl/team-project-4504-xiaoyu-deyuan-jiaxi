@@ -40,34 +40,63 @@ Linux / macOS:
 ./gradlew :app:run --args='<path/to/your.csv>'
 ```
 
-#### Optional JSON Output
+#### Optional JSON Output and Packing Modes
 
-You can optionally specify an output JSON file as a second argument. If provided, the application will write the packing results to the file in JSON format:
+The application supports optional parameters for JSON output and packing mode selection:
 
-Windows:
+**Full Usage:**
+```
+Main <input.csv> [output.json] [packing-mode]
+```
 
+**Parameters:**
+- `input.csv` (required): Path to the input CSV file
+- `output.json` (optional): Path to output JSON file. If provided, results will be written in JSON format
+- `packing-mode` (optional): Packing strategy to use. Options:
+  - `default`: Uses both boxes (STANDARD, LARGE) and CRATE boxes with all container types (default behavior)
+  - `box-only`: Only uses STANDARD and LARGE boxes with pallets (no CRATE boxes)
+  - `crate-only`: Only uses CRATE boxes with crates (no STANDARD/LARGE boxes)
+
+**Examples:**
+
+Basic usage (console output only, default mode):
+```powershell
+.\gradlew.bat :app:run --args="<path/to/your.csv>"
+```
+
+With JSON output (default mode):
 ```powershell
 .\gradlew.bat :app:run --args="<path/to/your.csv> <path/to/output.json>"
 ```
 
-Linux / macOS:
-
-```bash
-./gradlew :app:run --args='<path/to/your.csv> <path/to/output.json>'
+With packing mode only (no JSON output):
+```powershell
+.\gradlew.bat :app:run --args="<path/to/your.csv> box-only"
 ```
 
-Alternatively, after `./gradlew build` you can run the main class directly using the classpath produced in `app/build` e.g.:
+With both JSON output and packing mode:
+```powershell
+.\gradlew.bat :app:run --args="<path/to/your.csv> <path/to/output.json> crate-only"
+```
+
+Linux / macOS examples:
+
+```bash
+./gradlew :app:run --args='<path/to/your.csv> <path/to/output.json> box-only'
+```
+
+Alternatively, after `./gradlew build` you can run the main class directly:
 
 Windows (CMD):
 
 ```bat
-java -cp "app\build\libs\*;app\build\classes\java\main" archdesign.Main <path/to/your.csv> [optional-output.json]
+java -cp "app\build\libs\*;app\build\classes\java\main" archdesign.Main <path/to/your.csv> [output.json] [packing-mode]
 ```
 
 Linux / macOS:
 
 ```bash
-java -cp "app/build/libs/*:app/build/classes/java/main" archdesign.Main <path/to/your.csv> [optional-output.json]
+java -cp "app/build/libs/*:app/build/classes/java/main" archdesign.Main <path/to/your.csv> [output.json] [packing-mode]
 ```
 
 #### JSON Output Format
@@ -97,10 +126,32 @@ When an output file is specified, the application generates a JSON file with the
 }
 ```
 
+#### Error Handling for Unpacked Arts
+
+If any art pieces cannot be packed (e.g., they are too large for available boxes/containers), the application will:
+
+1. Print individual error messages to `System.err` during the packing process, identifying each unpacked art by ID
+2. Display a summary warning message at the end showing the total number of unpacked pieces
+3. Continue processing and generate results for the pieces that could be successfully packed
+
+Example error output:
+```
+Art Tag-XL-1 not packable
+
+!!! WARNING !!!
+Unable to pack 2 out of 55 art piece(s).
+These pieces are too large or do not fit within the available box and container constraints.
+Please review the error messages above for specific art IDs that could not be packed.
+!!!!!!!!!!!!!!!
+```
+
+**Note:** Unpacked pieces are not included in the JSON output, as the output format only contains successfully packed items.
+
 ### Notes
 
 - The CLI expects a CSV file path as the first argument.
-- An optional JSON output file path can be provided as the second argument.
+- Optional second argument: JSON output file path.
+- Optional third argument: packing mode (`default`, `box-only`, or `crate-only`).
 - For development prefer using the Gradle wrapper (`gradlew` / `gradlew.bat`) included in the repo.
 
 ### Running integration tests

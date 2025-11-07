@@ -11,6 +11,7 @@ public record ShipmentViewModel(
     double totalCost,
     int totalContainers,
     int totalBoxes,
-    List<ContainerViewModel> containers
+    List<ContainerViewModel> containers,
+    List<ArtViewModel> unpackedArts
 ) {
 }

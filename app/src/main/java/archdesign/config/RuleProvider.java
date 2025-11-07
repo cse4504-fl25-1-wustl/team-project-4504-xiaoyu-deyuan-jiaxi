@@ -2,6 +2,7 @@ package archdesign.config;
 
 import archdesign.config.spec.BoxRuleSpecification;
 import archdesign.config.spec.ContainerRuleSpecification;
+import archdesign.entities.Art;
 import archdesign.entities.enums.BoxType;
 import archdesign.entities.enums.ContainerType;
 import archdesign.entities.enums.Material;
@@ -14,7 +15,34 @@ import java.util.List;
  */
 public final class RuleProvider {
 
+    // Hard physical limit for all box types (including large boxes)
+    private static final int MAX_BOX_DIMENSION = 88; // Any dimension over 88" cannot be packed in any box
+
     private RuleProvider() {}
+
+    /**
+     * Checks if an art piece is physically packable based on hard dimensional limits.
+     * 
+     * Rule:
+     * - If ANY dimension exceeds 88", the art is UNPACKABLE (exceeds maximum box height limit)
+     * - The 88" limit applies to all box types (STANDARD, LARGE) after rotation
+     * - Width limits are already enforced by box rules (STANDARD: 36.5", LARGE: 43.5")
+     * 
+     * @param art The art piece to check
+     * @return true if the art can be packed, false if it should be counted as custom piece
+     */
+    public static boolean isPackable(Art art) {
+        double width = art.getWidth();
+        double height = art.getHeight();
+        
+        // Hard limit: any dimension over 88" is unpackable
+        // This ensures that even after rotation, the art won't exceed box height limits
+        if (width > MAX_BOX_DIMENSION || height > MAX_BOX_DIMENSION) {
+            return false;
+        }
+        
+        return true;
+    }
 
     public static List<BoxRuleSpecification> getBoxRules(UserConstraints constraints) {
         // For now, we only have one set of rules.
@@ -76,6 +104,7 @@ public final class RuleProvider {
             generateStandardBoxRule(Material.ACOUSTIC_PANEL, 4),
             generateStandardBoxRule(Material.ACOUSTIC_PANEL_FRAMED, 4),
             generateStandardBoxRule(Material.PATIENT_BOARD, 4),
+            generateStandardBoxRule(Material.MIRROR, 8),
 
             // --- PRIORITY 2: Large Box Rules (Attempt this for medium-sized items) ---
             generateLargeBoxRule(Material.GLASS, 6),
@@ -85,6 +114,7 @@ public final class RuleProvider {
             generateLargeBoxRule(Material.ACOUSTIC_PANEL, 4),
             generateLargeBoxRule(Material.ACOUSTIC_PANEL_FRAMED, 4),
             generateLargeBoxRule(Material.PATIENT_BOARD, 4),
+            generateLargeBoxRule(Material.MIRROR, 8),
 
             // --- PRIORITY 3: Crate Rules (Last resort for the largest items) ---
             // Within the Crate category, the more specific "Large Art" rule still comes first.

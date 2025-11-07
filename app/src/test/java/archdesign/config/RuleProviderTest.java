@@ -99,8 +99,8 @@ class RuleProviderTest {
         assertFalse(standardRules.isEmpty());
         
         for (BoxRuleSpecification rule : standardRules) {
-            assertTrue(rule.getMaxWidth() <= 36, "STANDARD box rules should have max width <= 36");
-            assertTrue(rule.getMaxHeight() <= 36, "STANDARD box rules should have max height <= 36");
+            assertTrue(rule.getMaxWidth() <= 36.5, "STANDARD box rules should have max width <= 36.5");
+            assertTrue(rule.getMaxHeight() <= 36.5, "STANDARD box rules should have max height <= 36.5");
         }
     }
 
@@ -119,8 +119,8 @@ class RuleProviderTest {
         for (BoxRuleSpecification rule : largeRules) {
             assertTrue(rule.getMinWidth() >= 37, "LARGE box rules should have min width >= 37");
             assertTrue(rule.getMinHeight() >= 37, "LARGE box rules should have min height >= 37");
-            assertTrue(rule.getMaxWidth() <= 43, "LARGE box rules should have max width <= 43");
-            assertTrue(rule.getMaxHeight() <= 43, "LARGE box rules should have max height <= 43");
+            assertTrue(rule.getMaxWidth() <= 43.5, "LARGE box rules should have max width <= 43.5");
+            assertTrue(rule.getMaxHeight() <= 43.5, "LARGE box rules should have max height <= 43.5");
         }
     }
 

@@ -2,13 +2,13 @@ package archdesign;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import archdesign.output.ConsoleOutputFormatter;
 import archdesign.response.ArtViewModel;
 import archdesign.response.BoxViewModel;
 import archdesign.response.ContainerViewModel;
 import archdesign.response.ShipmentViewModel;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.lang.reflect.Method;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -56,7 +56,8 @@ class MainTest {
             99.99, // totalCost
             1, // totalContainers
             1, // totalBoxes
-            List.of(container)
+            List.of(container),
+            List.of() // no unpacked arts
         );
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -64,10 +65,8 @@ class MainTest {
         System.setOut(new PrintStream(out));
 
         try {
-           
-            Method m = Main.class.getDeclaredMethod("displayViewModel", ShipmentViewModel.class);
-            m.setAccessible(true);
-            m.invoke(null, vm);
+            ConsoleOutputFormatter formatter = new ConsoleOutputFormatter();
+            formatter.display(vm);
         } finally {
             System.setOut(originalOut);
         }

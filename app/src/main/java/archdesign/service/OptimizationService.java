@@ -1,5 +1,6 @@
 package archdesign.service;
 
+import archdesign.config.RuleProvider;
 import archdesign.entities.Art;
 import archdesign.entities.Box;
 import archdesign.entities.Container;
@@ -52,10 +53,22 @@ public class OptimizationService {
 
             // Step 1: analyze the box requirements for each art
             List<ArtBoxRequirement> artRequirements = new ArrayList<>();
+            List<Art> unpackedArts = new ArrayList<>();
+            
             for (Art art : artsToPack) {
+                // First check if art is physically packable based on hard limits
+                if (!RuleProvider.isPackable(art)) {
+                    System.err.println("Art " + art.getId() + " (" + art.getWidth() + "x" + art.getHeight() + 
+                                     ") exceeds physical packaging limits and will be counted as custom piece");
+                    unpackedArts.add(art);
+                    continue;
+                }
+                
+                // Then check if there are valid packing options
                 List<PackingOption> options = feasibilityService.getValidPackingOptions(art, constraints);
                 if (options.isEmpty()) {
                     System.err.println("Art " + art.getId() + " not packable");
+                    unpackedArts.add(art);
                     continue;
                 }
                 artRequirements.add(new ArtBoxRequirement(art, options.get(0)));
@@ -145,7 +158,7 @@ public class OptimizationService {
 
                 System.out.println("Total cost: $" + String.format("%.2f", totalCost));
 
-                return new PackingPlan(containers, totalCost);
+                return new PackingPlan(containers, totalCost, unpackedArts);
                 
             } else {
                 System.err.println("OR-Tools did not find a feasible solution: " + resultStatus);
@@ -298,13 +311,22 @@ public class OptimizationService {
         return containers;
     }
 
-    // Fallback method remains unchanged
+    // Fallback method with unpacked arts tracking
     private PackingPlan fallbackHeuristic(List<Art> artsToPack, UserConstraints constraints) {
         List<Container> containers = new ArrayList<>();
+        List<Art> unpackedArts = new ArrayList<>();
         List<Art> sortedArts = new ArrayList<>(artsToPack);
         sortedArts.sort(Comparator.comparingDouble(Art::getWeight).reversed());
         
         for (Art art : sortedArts) {
+            // First check if art is physically packable based on hard limits
+            if (!RuleProvider.isPackable(art)) {
+                System.err.println("Art " + art.getId() + " (" + art.getWidth() + "x" + art.getHeight() + 
+                                 ") exceeds physical packaging limits (fallback heuristic)");
+                unpackedArts.add(art);
+                continue;
+            }
+            
             boolean placed = false;
             
             for (Container container : containers) {
@@ -318,6 +340,10 @@ public class OptimizationService {
                 Container newContainer = createNewContainerForArt(art, constraints);
                 if (newContainer != null) {
                     containers.add(newContainer);
+                } else {
+                    // Art could not be packed
+                    System.err.println("Art " + art.getId() + " not packable (fallback heuristic)");
+                    unpackedArts.add(art);
                 }
             }
         }
@@ -326,7 +352,7 @@ public class OptimizationService {
             .mapToDouble(costStrategy::calculateCost)
             .sum();
         
-        return new PackingPlan(containers, totalCost);
+        return new PackingPlan(containers, totalCost, unpackedArts);
     }
 
     private boolean tryAddArtToContainer(Container container, Art art, UserConstraints constraints) {
