@@ -63,6 +63,46 @@ tasks.register<JavaExec>("runGui") {
     this.mainClass.set("archdesign.gui.GuiApp")
 }
 
+// Produce a "fat" (uber) JAR that bundles runtime dependencies. This is
+// intentionally simple and works cross-platform for manual jpackage usage
+// or for users who just want a single JAR to double-click with a matching
+// JRE. The produced archive will be available as
+// app/build/libs/<project>-<version>-all.jar
+tasks.register<Jar>("fatJar") {
+    archiveClassifier.set("all")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(sourceSets.main.get().output)
+    // Unpack runtime classpath jars into the fat jar
+    dependsOn(configurations.runtimeClasspath)
+    from({
+        configurations.runtimeClasspath.get().filter { it.name.endsWith(".jar") }.map { zipTree(it) }
+    })
+    manifest {
+        attributes["Main-Class"] = "archdesign.Main"
+    }
+}
+
+// Produce a fat JAR specifically for launching the GUI (Swing) so double-click
+// will open the GUI instead of running the CLI. This produces a separate
+// artifact with a different classifier so both CLI and GUI jars can coexist.
+tasks.register<Jar>("fatJarGui") {
+    archiveClassifier.set("gui-all")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(sourceSets.main.get().output)
+    dependsOn(configurations.runtimeClasspath)
+    from({
+        configurations.runtimeClasspath.get().filter { it.name.endsWith(".jar") }.map { zipTree(it) }
+    })
+    manifest {
+        attributes["Main-Class"] = "archdesign.gui.GuiApp"
+    }
+}
+
+// Note: Packaging into native installers (MSI/EXE/DMG/PKG) can be done
+// with `jpackage` or via Gradle plugins (org.beryx.runtime) but that plugin
+// is intentionally not applied here to avoid repository-specific plugin
+// resolution issues. See README for manual jpackage guidance.
+
 // No JavaFX configuration; the GUI provided is Swing-based and requires only
 // standard Java SE APIs so it compiles with the existing toolchain.
 
