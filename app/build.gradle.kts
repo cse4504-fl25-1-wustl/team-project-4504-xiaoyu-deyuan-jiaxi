@@ -25,8 +25,9 @@ dependencies {
     // Mockito for mocking
     testImplementation("org.mockito:mockito-core:5.8.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.8.0")
-    // Gson for JSON serialization in tests (golden-file comparisons)
-    testImplementation("com.google.code.gson:gson:2.10.1")
+    
+    // Gson for JSON serialization
+    implementation("com.google.code.gson:gson:2.10.1")
     
     // Apache Commons Math for optimization algorithms
     implementation("org.apache.commons:commons-math3:3.6.1")

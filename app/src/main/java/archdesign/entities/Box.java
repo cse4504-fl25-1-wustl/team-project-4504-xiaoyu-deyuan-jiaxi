@@ -78,10 +78,11 @@ public class Box {
      */
     public int getCurrentHeight() {
         // Step 1: Find the maximum height among all arts in the box.
-        // If the box is empty, .max() returns an empty Optional, and .orElse(0) provides a default of 0.
-        int maxArtHeight = artsInBox.stream().mapToInt(Art::getHeight).max().orElse(0);
-        // Step 2: Return the greater of the box's minimum height and the max art height.
-        return Math.max(this.minHeight, maxArtHeight);
+        // Since Art height is now double, we keep it as double for precision.
+        // If the box is empty, .max() returns an empty Optional, and .orElse(0.0) provides a default of 0.0.
+        double maxArtHeight = artsInBox.stream().mapToDouble(Art::getHeight).max().orElse(0.0);
+        // Step 2: Return the greater of the box's minimum height and the max art height, ceiled to ensure sufficient space.
+        return (int) Math.ceil(Math.max(this.minHeight, maxArtHeight));
     }
 
     /**

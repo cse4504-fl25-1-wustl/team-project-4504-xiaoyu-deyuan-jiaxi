@@ -2,6 +2,7 @@ package archdesign;
 
 import archdesign.entities.Art;
 import archdesign.entities.enums.ShippingProvider;
+import archdesign.entities.enums.ContainerType;
 import archdesign.interactor.Packer;
 import archdesign.interactor.PackingPlan;
 import archdesign.interactor.UserConstraints;
@@ -9,9 +10,8 @@ import archdesign.request.ArtImporter;
 import archdesign.parser.CsvParser;
 import archdesign.response.Response;
 import archdesign.response.ShipmentViewModel;
-import archdesign.response.ContainerViewModel;
-import archdesign.response.BoxViewModel;
-import archdesign.response.ArtViewModel;
+import archdesign.output.ConsoleOutputFormatter;
+import archdesign.output.JsonOutputWriter;
 
 import java.util.List;
 
@@ -23,23 +23,47 @@ public class Main {
 
     /**
      * The main entry point for the Java application.
-     * @param args Command line arguments, expecting the path to a CSV file.
+     * @param args Command line arguments:
+     *             args[0]: path to CSV file (required)
+     *             args[1]: optional output JSON file path
+     *             args[2]: optional packing mode: "box-only", "crate-only", or "default" (uses both boxes and crates)
      */
     public static void main(String[] args) {
         if (args.length == 0) {
             System.err.println("Error: Please provide the path to the CSV file as an argument.");
-            System.err.println("Usage: java Main <path/to/your/file.csv>");
+            System.err.println("Usage: java Main <path/to/your/file.csv> [optional-output.json] [packing-mode]");
+            System.err.println("Packing modes: box-only, crate-only, default (default uses both boxes and crates)");
             return;
         }
+        
         String filePath = args[0];
+        String outputFilePath = args.length > 1 && !args[1].equals("box-only") && !args[1].equals("crate-only") && !args[1].equals("default") ? args[1] : null;
+        
+        // Determine packing mode from arguments
+        String packingMode = "default";
+        if (args.length > 1) {
+            String lastArg = args[args.length - 1];
+            if (lastArg.equals("box-only") || lastArg.equals("crate-only") || lastArg.equals("default")) {
+                packingMode = lastArg;
+            }
+        }
         
         System.out.println("--- Starting Packer Process for file: " + filePath + " ---");
+        System.out.println("Packing mode: " + packingMode);
 
-        ShipmentViewModel viewModel = processFile(filePath);
+        ShipmentViewModel viewModel = processFile(filePath, packingMode);
 
-        // display on console
+        // Display on console using the formatter
         System.out.println("\n--- Displaying Packing Plan ---");
-        displayViewModel(viewModel);
+        ConsoleOutputFormatter consoleFormatter = new ConsoleOutputFormatter();
+        consoleFormatter.display(viewModel);
+        
+        // If output file is specified, write JSON output
+        if (outputFilePath != null) {
+            System.out.println("\n--- Writing JSON output to: " + outputFilePath + " ---");
+            JsonOutputWriter jsonWriter = new JsonOutputWriter();
+            jsonWriter.write(viewModel, outputFilePath);
+        }
     }
 
     /**
@@ -49,15 +73,28 @@ public class Main {
      * @return ShipmentViewModel (may be null)
      */
     public static ShipmentViewModel processFile(String filePath) {
+        return processFile(filePath, "default");
+    }
+
+    /**
+     * Process the given CSV file with a specific packing mode.
+     * @param filePath path to CSV file
+     * @param packingMode "box-only", "crate-only", or "default"
+     * @return ShipmentViewModel (may be null)
+     */
+    public static ShipmentViewModel processFile(String filePath, String packingMode) {
         // --- "IN" PART ---
         ArtImporter importer = new ArtImporter(new CsvParser());
         List<Art> artsToPack = importer.importFromFile(filePath);
         System.out.println("Successfully imported " + artsToPack.size() + " total art items.");
 
         // --- "CORE" PART ---
-        UserConstraints constraints = new UserConstraints();
+        UserConstraints constraints = buildConstraints(packingMode);
+
         ShippingProvider provider = ShippingProvider.PLACEHOLDER;
         System.out.println("\n--- Running Packer Algorithm... ---");
+
+        // Normal flow: use the constraints based on packing mode
         PackingPlan finalPlan = Packer.pack(artsToPack, constraints, provider);
 
         // --- "OUT" PART ---
@@ -67,109 +104,40 @@ public class Main {
     }
 
     /**
-     * The presentation layer logic. It consumes the pure data from the ViewModel
-     * and decides exactly how to format and display it for the console.
-     * @param viewModel The complete, read-only data package for the shipment.
+     * Build user constraints based on the specified packing mode.
+     * @param packingMode "box-only", "crate-only", or "default"
+     * @return UserConstraints object configured for the specified mode
      */
-    private static void displayViewModel(ShipmentViewModel viewModel) {
-        if (viewModel == null || viewModel.containers().isEmpty()) {
-            System.out.println("No containers were used. The packing plan is empty.");
-            return;
+    private static UserConstraints buildConstraints(String packingMode) {
+        switch (packingMode.toLowerCase()) {
+            case "box-only":
+                // Only use STANDARD and LARGE boxes with pallets
+                return UserConstraints.newBuilder()
+                    .withAllowedBoxTypes(java.util.List.of(
+                        archdesign.entities.enums.BoxType.STANDARD,
+                        archdesign.entities.enums.BoxType.LARGE
+                    ))
+                    .withAllowedContainerTypes(java.util.List.of(
+                        ContainerType.STANDARD_PALLET,
+                        ContainerType.OVERSIZE_PALLET
+                    ))
+                    .build();
+            
+            case "crate-only":
+                // Only use CRATE boxes with crates
+                return UserConstraints.newBuilder()
+                    .withAllowedBoxTypes(java.util.List.of(
+                        archdesign.entities.enums.BoxType.CRATE
+                    ))
+                    .withAllowedContainerTypes(java.util.List.of(
+                        ContainerType.STANDARD_CRATE
+                    ))
+                    .build();
+            
+            case "default":
+            default:
+                // Use default: both boxes (STANDARD, LARGE, CRATE) and all containers
+                return new UserConstraints();
         }
-    // The frontend is responsible for all formatting and display choices.
-    System.out.println("--- Shipment Plan Summary ---");
-    System.out.println("Total Estimated Cost: $" + String.format("%.2f", viewModel.totalCost()));
-    System.out.println("Total Weight: " + String.format("%.2f", viewModel.totalWeight()) + " lbs");
-    System.out.println("Total Containers: " + viewModel.totalContainers());
-    System.out.println("Total Boxes: " + viewModel.totalBoxes());
-    System.out.println("------------------------------------");
-
-    // Gather all arts across the shipment so we can compute the requested work-order summary
-    var allArts = new java.util.ArrayList<archdesign.response.ArtViewModel>();
-        for (ContainerViewModel container : viewModel.containers()) {
-            String containerDims = String.format("%dx%dx%d", container.length(), container.width(), container.currentHeight());
-            System.out.println(
-                "-> Container: " + container.id() +
-                " (Type: " + container.type() + ")" +
-                " | Dimensions: " + containerDims +
-                " | Weight: " + String.format("%.2f", container.weight()) + " lbs"
-            );
-
-            for (BoxViewModel box : container.boxes()) {
-                String boxDims = String.format("%dx%dx%d", box.length(), box.width(), box.currentHeight());
-                System.out.println(
-                    "   --> Box: " + box.id() +
-                    " (Type: " + box.type() + ")" +
-                    " | Dimensions: " + boxDims +
-                    " | Weight: " + String.format("%.2f", box.weight()) + " lbs" +
-                    " | Contains: " + box.arts().size() + " items"
-                );
-
-                // This section now displays all the detailed art info from the ArtViewModel.
-                for (ArtViewModel art : box.arts()) {
-                    // collect art for summary calculations
-                    allArts.add(art);
-                    System.out.println(
-                        "       - Art: " + art.id() +
-                        " | Material: " + art.material() +
-                        " | Dims: " + art.width() + "x" + art.height() +
-                        " | Weight: " + String.format("%.2f", art.weight()) + " lbs"
-                    );
-                }
-            }
-            System.out.println(); // Add a blank line for readability
-        }
-
-        // --- Work Order Summary ---
-        // Compute totals and group oversized pieces
-        int totalPieces = allArts.size();
-        double totalArtworkWeight = 0.0;
-        java.util.Map<String, OversizeGroup> oversizeMap = new java.util.LinkedHashMap<>();
-        int standardPieces = 0;
-
-        for (archdesign.response.ArtViewModel art : allArts) {
-            totalArtworkWeight += art.weight();
-            boolean isOversized = art.width() > 44 || art.height() > 44;
-            if (!isOversized) {
-                standardPieces++;
-            } else {
-                String dims = art.height() + "\" x " + art.width() + "\""; // e.g. 46" x 34"
-                OversizeGroup g = oversizeMap.get(dims);
-                if (g == null) {
-                    g = new OversizeGroup(art.height(), art.width());
-                    oversizeMap.put(dims, g);
-                }
-                g.add(art.weight());
-            }
-        }
-
-        double finalShipmentWeight = viewModel.totalWeight();
-        double totalPackagingWeight = finalShipmentWeight - totalArtworkWeight;
-
-        System.out.println("Work Order Summary:");
-        System.out.println("- Total Pieces: " + totalPieces);
-        System.out.println("- Standard Size Pieces: " + standardPieces);
-        System.out.println("- Oversized Pieces: " + oversizeMap.values().stream().mapToInt(g->g.qty).sum());
-        if (!oversizeMap.isEmpty()) {
-            for (var entry : oversizeMap.entrySet()) {
-                OversizeGroup g = entry.getValue();
-                System.out.println("   * " + entry.getKey() + " (Qty: " + g.qty + ") = " + String.format("%.0f", g.totalWeight) + " lbs");
-            }
-        }
-
-        System.out.println();
-        System.out.println("Total Artwork Weight: " + String.format("%.0f", totalArtworkWeight) + " lbs");
-        System.out.println("Total Packaging Weight: " + String.format("%.0f", totalPackagingWeight) + " lbs");
-        System.out.println("Final Shipment Weight: " + String.format("%.0f", finalShipmentWeight) + " lbs");
-    }
-
-    // small helper to group oversize pieces
-    private static class OversizeGroup {
-        final int w;
-        final int h;
-        int qty = 0;
-        double totalWeight = 0.0;
-        OversizeGroup(int w, int h) { this.w = w; this.h = h; }
-        void add(double weight) { qty++; totalWeight += weight; }
     }
 }

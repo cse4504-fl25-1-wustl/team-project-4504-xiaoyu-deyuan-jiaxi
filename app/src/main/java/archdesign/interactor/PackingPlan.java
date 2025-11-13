@@ -1,5 +1,6 @@
 package archdesign.interactor;
 
+import archdesign.entities.Art;
 import archdesign.entities.Container;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,6 +16,9 @@ public class PackingPlan {
 
     // --- Core Data: The hierarchical structure of the packed items ---
     private final List<Container> containers;
+    
+    // --- Unpacked items: Arts that could not be packed ---
+    private final List<Art> unpackedArts;
 
     // --- Summary Metadata: A high-level, pre-calculated overview of the results ---
     private final double totalCost;
@@ -31,7 +35,19 @@ public class PackingPlan {
      * @param totalCost The total shipping cost, calculated by the OptimizationService.
      */
     public PackingPlan(List<Container> containers, double totalCost) {
+        this(containers, totalCost, new ArrayList<>());
+    }
+    
+    /**
+     * Constructs a new PackingPlan with unpacked arts.
+     *
+     * @param containers The finalized list of containers, fully packed with boxes and art.
+     * @param totalCost The total shipping cost, calculated by the OptimizationService.
+     * @param unpackedArts The list of arts that could not be packed.
+     */
+    public PackingPlan(List<Container> containers, double totalCost, List<Art> unpackedArts) {
         this.containers = containers != null ? containers : new ArrayList<>();
+        this.unpackedArts = unpackedArts != null ? new ArrayList<>(unpackedArts) : new ArrayList<>();
         this.totalCost = totalCost;
 
         // --- Calculate summary data once upon creation ---
@@ -84,5 +100,14 @@ public class PackingPlan {
      */
     public int getTotalBoxCount() {
         return totalBoxCount;
+    }
+    
+    /**
+     * Gets the list of arts that could not be packed.
+     * These are considered as "custom pieces" that need special handling.
+     * @return An unmodifiable list of unpacked arts.
+     */
+    public List<Art> getUnpackedArts() {
+        return Collections.unmodifiableList(unpackedArts);
     }
 }

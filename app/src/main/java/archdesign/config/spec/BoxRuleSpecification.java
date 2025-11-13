@@ -13,10 +13,10 @@ public class BoxRuleSpecification {
     // --- Rule Conditions (The "IF" part) ---
     private final String description;
     private final Material material; // Rule applies to this material (null means any material)
-    private final int minWidth;
-    private final int maxWidth;
-    private final int minHeight;
-    private final int maxHeight;
+    private final double minWidth;
+    private final double maxWidth;
+    private final double minHeight;
+    private final double maxHeight;
 
     // --- Rule Results (The "THEN" part) ---
     private final BoxType allowedBoxType;
@@ -51,10 +51,10 @@ public class BoxRuleSpecification {
 
     public String getDescription() { return description; }
     public Material getMaterial() { return material; }
-    public int getMinWidth() { return minWidth; }
-    public int getMaxWidth() { return maxWidth; }
-    public int getMinHeight() { return minHeight; }
-    public int getMaxHeight() { return maxHeight; }
+    public double getMinWidth() { return minWidth; }
+    public double getMaxWidth() { return maxWidth; }
+    public double getMinHeight() { return minHeight; }
+    public double getMaxHeight() { return maxHeight; }
     public BoxType getAllowedBoxType() { return allowedBoxType; }
     public int getCapacity() { return capacity; }
 
@@ -72,10 +72,10 @@ public class BoxRuleSpecification {
 
         // Optional parameters with default values
         private Material material = null; // Default to all materials
-        private int minWidth = 0;
-        private int maxWidth = Integer.MAX_VALUE;
-        private int minHeight = 0;
-        private int maxHeight = Integer.MAX_VALUE;
+        private double minWidth = 0.0;
+        private double maxWidth = Double.MAX_VALUE;
+        private double minHeight = 0.0;
+        private double maxHeight = Double.MAX_VALUE;
 
         /**
          * The builder's constructor takes the mandatory rule parameters.
@@ -101,7 +101,7 @@ public class BoxRuleSpecification {
          * @param minWidth The minimum width an Art must have to match this rule.
          * @return this builder for chaining.
          */
-        public Builder withMinWidth(int minWidth) {
+        public Builder withMinWidth(double minWidth) {
             this.minWidth = minWidth;
             return this;
         }
@@ -111,7 +111,7 @@ public class BoxRuleSpecification {
          * @param maxWidth The maximum width an Art can have to match this rule.
          * @return this builder for chaining.
          */
-        public Builder withMaxWidth(int maxWidth) {
+        public Builder withMaxWidth(double maxWidth) {
             this.maxWidth = maxWidth;
             return this;
         }
@@ -121,7 +121,7 @@ public class BoxRuleSpecification {
          * @param minHeight The minimum height an Art must have to match this rule.
          * @return this builder for chaining.
          */
-        public Builder withMinHeight(int minHeight) {
+        public Builder withMinHeight(double minHeight) {
             this.minHeight = minHeight;
             return this;
         }
@@ -131,7 +131,7 @@ public class BoxRuleSpecification {
          * @param maxHeight The maximum height an Art can have to match this rule.
          * @return this builder for chaining.
          */
-        public Builder withMaxHeight(int maxHeight) {
+        public Builder withMaxHeight(double maxHeight) {
             this.maxHeight = maxHeight;
             return this;
         }

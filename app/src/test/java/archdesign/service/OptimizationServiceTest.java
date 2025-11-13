@@ -175,8 +175,8 @@ class OptimizationServiceTest {
         PackingOption packingOption = new PackingOption(BoxType.STANDARD, 1);
         when(feasibilityService.getValidPackingOptions(packableArt, constraints))
             .thenReturn(List.of(packingOption));
-        when(feasibilityService.getValidPackingOptions(unpackableArt, constraints))
-            .thenReturn(Collections.emptyList());
+        // Note: No need to mock unpackableArt - it will be filtered by RuleProvider.isPackable() 
+        // before reaching FeasibilityService (100 > 88" limit)
         
         ContainerOption containerOption = new ContainerOption(ContainerType.GLASS_PALLET, 10);
         when(feasibilityService.getValidContainerOptions(any(archdesign.entities.Box.class), any(UserConstraints.class)))

@@ -1,0 +1,5 @@
+# 8PerBoxStandard9
+
+X is 9 from the file directory name, Y is mirror according to the 8 per box rule, and Z is N/A because this is not a paper print.
+
+Since there are 9 pieces of standard-sized art that is of a mirror medium, it will take two standard boxes (potentially 8 in one and 1 in another).

@@ -1,0 +1,3 @@
+line 1 has quantity 2 of standard items that could fit in a standard box and line 2 can fit in a large box.
+
+Since they're all glass glazing, we can fit all 3 items into one large box as it still meets the pieces per box threshold.
