@@ -35,6 +35,9 @@ jobs:
           APP_VERSION: ${{ github.ref_name }}
         run: |
           set -e
+          # Strip a leading 'v' from tag names like 'v1.0.0' so jpackage receives a numeric version
+          APP_VERSION="${APP_VERSION#v}"
+          echo "Normalized app version: $APP_VERSION"
           mkdir -p installer
           # pick GUI jar if available, otherwise first jar
           JAR=$(ls app/build/libs/*gui*.jar 2>/dev/null || ls app/build/libs/*.jar | head -n 1)
@@ -73,11 +76,14 @@ jobs:
           MAIN_CLASS: "archdesign.gui.GuiApp"
           APP_VERSION: ${{ github.ref_name }}
         run: |
+          # Normalize tag like 'v1.0.0' to '1.0.0' for Windows installer product version requirements
+          $appVersion = $env:APP_VERSION.TrimStart('v')
+          Write-Host "Normalized app version: $appVersion"
           mkdir installer
           $jar = Get-ChildItem -Path app\build\libs\*gui*.jar -ErrorAction SilentlyContinue | Select-Object -First 1
           if (-not $jar) { $jar = Get-ChildItem -Path app\build\libs\*.jar | Select-Object -First 1 }
           Write-Host "Using jar: $($jar.Name)"
-          jpackage --input "app\build\libs" --name $env:APP_NAME --main-jar $jar.Name --main-class $env:MAIN_CLASS --type exe --dest installer --app-version $env:APP_VERSION
+          jpackage --input "app\build\libs" --name $env:APP_NAME --main-jar $jar.Name --main-class $env:MAIN_CLASS --type exe --dest installer --app-version $appVersion
 
       - name: Upload Windows EXE
         uses: actions/upload-artifact@v4
