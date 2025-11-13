@@ -37,6 +37,9 @@ dependencies {
     
     // This dependency is used by the application.
     implementation(libs.guava)
+
+    // Note: No JavaFX plugin/dependencies here. The project includes a lightweight
+    // Swing-based GUI so no external GUI plugin is required for compilation.
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
@@ -50,6 +53,23 @@ application {
     // Define the main class for the application.
     mainClass = "archdesign.Main"
 }
+
+// Add a convenience task to run the GUI application from Gradle
+tasks.register<JavaExec>("runGui") {
+    group = "application"
+    description = "Run the GUI application (Swing)"
+    classpath = sourceSets.main.get().runtimeClasspath
+    // Use the Kotlin DSL property for main class
+    this.mainClass.set("archdesign.gui.GuiApp")
+}
+
+// No JavaFX configuration; the GUI provided is Swing-based and requires only
+// standard Java SE APIs so it compiles with the existing toolchain.
+
+// Note: runtime (jpackage) support can be added by enabling the org.beryx.runtime
+// Gradle plugin and configuring the `runtime` block. The plugin was intentionally
+// removed here to avoid plugin resolution issues in environments where the plugin
+// cannot be resolved. See README for guidance on packaging with jpackage.
 
 tasks.named<Test>("test") {
     useJUnitPlatform()

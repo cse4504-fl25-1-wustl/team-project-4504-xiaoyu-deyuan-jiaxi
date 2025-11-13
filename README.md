@@ -49,6 +49,71 @@ The application supports optional parameters for JSON output and packing mode se
 Main <input.csv> [output.json] [packing-mode]
 ```
 
+Alternatively, after `./gradlew build` you can run the main class directly:
+
+```bash
+java -cp "app/build/libs/*:app/build/classes/java/main" archdesign.Main <path/to/your.csv> [output.json] [packing-mode]
+```
+
+## Graphical (GUI) application
+
+A minimal JavaFX GUI has been added. The GUI re-uses the same interactor/core pipeline and presents a small summary of the packing result. The project includes Gradle support to run the GUI and to create native bundles/installers via the `org.beryx.runtime` plugin (uses jpackage under the hood).
+
+Prerequisites:
+- JDK 21 (or another JDK that provides jpackage for packaging). On Windows and macOS, use the corresponding JDK installer (e.g., Eclipse Adoptium / Temurin).
+- For packaging (installer creation) you need a host JDK that includes jpackage. Building a Windows installer requires running on Windows; macOS installer requires running on macOS.
+
+Run the GUI (no installer, just run via Gradle):
+
+Windows (cmd.exe):
+
+```powershell
+.\gradlew.bat :app:runGui
+```
+
+macOS / Linux:
+
+```bash
+./gradlew :app:runGui
+```
+
+Create a native application bundle / installer (example flow):
+
+1. Verify available packaging tasks:
+
+Windows (cmd.exe):
+
+```powershell
+.\gradlew.bat :app:tasks --all | findstr /I jpackage
+```
+
+macOS / Linux:
+
+```bash
+./gradlew :app:tasks --all | grep -i jpackage || true
+```
+
+2. If the runtime/jpackage tasks are available (provided by the `org.beryx.runtime` Gradle plugin), run them. Example (task names may vary slightly depending on plugin version):
+
+Windows (cmd.exe):
+
+```powershell
+#.\gradlew.bat :app:runtime:createImage  # produces a runtime image
+#.\gradlew.bat :app:runtime:jpackage    # produces an installer (msi or exe depending on jpackage options)
+```
+
+macOS (bash):
+
+```bash
+./gradlew :app:runtime:createImage
+./gradlew :app:runtime:jpackage         # creates a .dmg or .pkg depending on options
+```
+
+Notes:
+- The Gradle runtime plugin is configured in `app/build.gradle.kts` with a basic jpackage scaffold. You can further customize the `runtime` block (icon, installer options, application name, version) to match your desired output.
+- Producing installers for another OS (cross-building) typically requires more configuration or using CI runners on the target OS.
+
+If you prefer to create an installer manually with `jpackage`, you can build the fat jar and invoke `jpackage` with the jar as input. Use `./gradlew :app:build` to produce the jar(s) under `app/build/libs/` and follow `jpackage` docs for platform-specific flags.
 **Parameters:**
 - `input.csv` (required): Path to the input CSV file
 - `output.json` (optional): Path to output JSON file. If provided, results will be written in JSON format
