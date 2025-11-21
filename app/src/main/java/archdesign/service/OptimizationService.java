@@ -11,10 +11,12 @@ import archdesign.interactor.UserConstraints;
 import archdesign.service.costing.ShippingCostStrategy;
 
 import com.google.ortools.Loader;
-import com.google.ortools.linearsolver.MPConstraint;
-import com.google.ortools.linearsolver.MPObjective;
-import com.google.ortools.linearsolver.MPSolver;
-import com.google.ortools.linearsolver.MPVariable;
+import com.google.ortools.sat.CpModel;
+import com.google.ortools.sat.CpSolver;
+import com.google.ortools.sat.CpSolverStatus;
+import com.google.ortools.sat.IntVar;
+import com.google.ortools.sat.LinearExpr;
+import com.google.ortools.sat.LinearExprBuilder;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -44,13 +46,9 @@ public class OptimizationService {
         try {
             Loader.loadNativeLibraries();
             
-            MPSolver solver = MPSolver.createSolver("SCIP");
-            if (solver == null) {
-                System.err.println("Could not create solver, falling back to heuristic algorithm");
-                return fallbackHeuristic(artsToPack, constraints);
-            }
-
-            solver.setTimeLimit(60000); // 60 seconds time limit
+            CpModel model = new CpModel();
+            CpSolver solver = new CpSolver();
+            solver.getParameters().setMaxTimeInSeconds(60.0); // 60 seconds time limit
 
             // Step 1: analyze the box requirements for each art with smart material grouping
             List<ArtBoxRequirement> artRequirements = new ArrayList<>();
@@ -88,9 +86,9 @@ public class OptimizationService {
                 getContainerCapacities(boxesNeeded.keySet(), constraints);
 
             // Step 4: create decision variables for each container type
-            Map<ContainerType, MPVariable> containerVars = new HashMap<>();
+            Map<ContainerType, IntVar> containerVars = new HashMap<>();
             for (ContainerType containerType : containerCapacities.keySet()) {
-                MPVariable var = solver.makeIntVar(0, 100, "container_" + containerType.name());
+                IntVar var = model.newIntVar(0, 100, "container_" + containerType.name());
                 containerVars.put(containerType, var);
             }
 
@@ -99,65 +97,82 @@ public class OptimizationService {
                 BoxType boxType = entry.getKey();
                 int needed = entry.getValue();
                 
-                MPConstraint constraint = solver.makeConstraint(needed, Double.POSITIVE_INFINITY, 
-                    "box_capacity_" + boxType.name());
+                // Build linear expression: sum of (container_count * capacity for this box type)
+                LinearExprBuilder expr = LinearExpr.newBuilder();
                 
-                // for every container, if it can fit the box, add to capability 
                 for (Map.Entry<ContainerType, Map<BoxType, Integer>> containerEntry : containerCapacities.entrySet()) {
                     ContainerType containerType = containerEntry.getKey();
                     Map<BoxType, Integer> capacities = containerEntry.getValue();
                     
                     Integer capacity = capacities.get(boxType);
                     if (capacity != null && capacity > 0) {
-                        // if container can fit the box, add capacity to the box 
-                        constraint.setCoefficient(containerVars.get(containerType), capacity);
+                        expr.addTerm(containerVars.get(containerType), capacity);
                     }
                 }
+                
+                model.addGreaterOrEqual(expr, needed);
+            }
+
+            // Add constraint: total boxes cannot exceed total container capacity
+            // Use conservative estimate: if mixing box types, capacity = min capacity
+            int totalBoxes = boxesNeeded.values().stream().mapToInt(Integer::intValue).sum();
+            boolean hasMixedBoxTypes = boxesNeeded.size() > 1;
+            
+            if (hasMixedBoxTypes) {
+                // When we have mixed box types (e.g., Standard + Large),
+                // each container can only hold min(capacity) boxes total
+                LinearExprBuilder totalCapExpr = LinearExpr.newBuilder();
+                
+                for (Map.Entry<ContainerType, Map<BoxType, Integer>> containerEntry : containerCapacities.entrySet()) {
+                    ContainerType containerType = containerEntry.getKey();
+                    Map<BoxType, Integer> capacities = containerEntry.getValue();
+                    
+                    // Find minimum capacity for box types we're actually packing
+                    int minCapacity = capacities.entrySet().stream()
+                        .filter(e -> boxesNeeded.containsKey(e.getKey()) && e.getValue() > 0)
+                        .mapToInt(Map.Entry::getValue)
+                        .min()
+                        .orElse(0);
+                    
+                    if (minCapacity > 0) {
+                        totalCapExpr.addTerm(containerVars.get(containerType), minCapacity);
+                    }
+                }
+                
+                model.addGreaterOrEqual(totalCapExpr, totalBoxes);
             }
 
             // Step 6: set objective - minimize total container weight
-            // Primary: minimize total weight
-            // Secondary: when weights are equal, minimize container count
-            MPObjective objective = solver.objective();
-            double artsWeight = artsToPack.stream().mapToDouble(Art::getWeight).sum();
+            LinearExprBuilder objectiveExpr = LinearExpr.newBuilder();
             
-            for (Map.Entry<ContainerType, MPVariable> entry : containerVars.entrySet()) {
+            for (Map.Entry<ContainerType, IntVar> entry : containerVars.entrySet()) {
                 ContainerType containerType = entry.getKey();
-                MPVariable var = entry.getValue();
+                IntVar var = entry.getValue();
                 
-                // Objective = container weight + small penalty for count
-                // The 0.01 penalty ensures that when weights are equal,
-                // the solution with fewer containers is preferred
-                // Example: 4 oversized (75*4 = 300 lbs) vs 5 standard (60*5 = 300 lbs)
-                // With penalty: 4*75.01 = 300.04 vs 5*60.01 = 300.05
-                // So 4 oversized containers will be selected (300.04 < 300.05)
-                double coefficient = containerType.getWeight() + 0.01;
-                objective.setCoefficient(var, coefficient);
+                // Objective = container weight * 100 + 1 (small penalty for count)
+                // Multiply by 100 to keep integer arithmetic while maintaining precision
+                long coefficient = (long)(containerType.getWeight() * 100) + 1;
+                objectiveExpr.addTerm(var, coefficient);
             }
-            objective.setMinimization();
+            
+            model.minimize(objectiveExpr);
 
             System.out.println("\nStarting solver...");
 
             // step 7: solve 
-            final MPSolver.ResultStatus resultStatus = solver.solve();
+            CpSolverStatus status = solver.solve(model);
 
-            if (resultStatus == MPSolver.ResultStatus.OPTIMAL || resultStatus == MPSolver.ResultStatus.FEASIBLE) {
-
+            if (status == CpSolverStatus.OPTIMAL || status == CpSolverStatus.FEASIBLE) {
 
                 // get solution
-             
                 Map<ContainerType, Integer> solution = new HashMap<>();
-                double totalContainerWeight = 0;
-                int totalContainers = 0;
 
-                for (Map.Entry<ContainerType, MPVariable> entry : containerVars.entrySet()) {
+                for (Map.Entry<ContainerType, IntVar> entry : containerVars.entrySet()) {
                     ContainerType type = entry.getKey();
-                    int count = (int) Math.round(entry.getValue().solutionValue());
+                    long count = solver.value(entry.getValue());
                     if (count > 0)
                     {
-                        solution.put(type, count);
-                        totalContainerWeight += type.getWeight() * count;
-                        totalContainers += count;
+                        solution.put(type, (int)count);
                     }
                 }
 
@@ -173,7 +188,7 @@ public class OptimizationService {
                 return new PackingPlan(containers, totalCost, unpackedArts);
                 
             } else {
-                System.err.println("OR-Tools did not find a feasible solution: " + resultStatus);
+                System.err.println("CP-SAT solver did not find a feasible solution: " + status);
                 return fallbackHeuristic(artsToPack, constraints);
             }
 
@@ -455,13 +470,27 @@ public class OptimizationService {
                     Integer maxCapacity = capacities.get(boxType);
                     
                     if (maxCapacity != null && maxCapacity > 0) {
-                        // check whether the container can still fit this box
-                   
-                        long currentBoxCount = container.getBoxesInContainer().stream()
-                            .filter(b -> b.getBoxType() == boxType)
-                            .count();
+                        // Calculate effective capacity based on what's already in the container
+                        // If container has Large boxes, capacity = 3
+                        // If container has only Standard boxes, capacity = 4 or 5 (depending on pallet type)
+                        int effectiveLimit = maxCapacity;
                         
-                        if (currentBoxCount < maxCapacity) {
+                        // Check if container already has boxes
+                        if (!container.getBoxesInContainer().isEmpty()) {
+                            // Find the minimum capacity among all box types already in container
+                            int minExistingCapacity = Integer.MAX_VALUE;
+                            for (Box existingBox : container.getBoxesInContainer()) {
+                                BoxType existingType = existingBox.getBoxType();
+                                Integer existingCap = capacities.get(existingType);
+                                if (existingCap != null && existingCap < minExistingCapacity) {
+                                    minExistingCapacity = existingCap;
+                                }
+                            }
+                            // Use minimum of existing capacity and new box capacity
+                            effectiveLimit = Math.min(minExistingCapacity, maxCapacity);
+                        }
+                        
+                        if (container.getBoxesInContainer().size() < effectiveLimit) {
                             container.addBox(box);
                             placed = true;
                             break;
