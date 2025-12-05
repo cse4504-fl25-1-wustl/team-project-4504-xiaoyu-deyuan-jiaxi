@@ -141,6 +141,7 @@ public class GuiApp {
         gbc.gridx = 2;
         gbc.weightx = 0;
         chooseBtn = new JButton("Browse...");
+        chooseBtn.setToolTipText("Select a CSV file with artwork details (supports both old and new formats)");
         chooseBtn.addActionListener(e -> handleFileSelection());
         panel.add(chooseBtn, gbc);
 
@@ -157,7 +158,10 @@ public class GuiApp {
             "Box Only (No Crates)",
             "Crate Only (No Boxes)"
         });
-        packingModeCombo.setToolTipText("Select whether crates can be used for packing");
+        packingModeCombo.setToolTipText(
+            "Default: Use both boxes and crates for optimal packing\n" +
+            "Box Only: Use only boxes, no crates\n" +
+            "Crate Only: Use only crates, no boxes");
         panel.add(packingModeCombo, gbc);
 
         // Submit Button
@@ -169,6 +173,7 @@ public class GuiApp {
         submitBtn.setEnabled(false);
         submitBtn.setFont(new Font("Arial", Font.BOLD, 14));
         submitBtn.setPreferredSize(new Dimension(200, 35));
+        submitBtn.setToolTipText("Process the selected CSV file and calculate packing estimates");
         submitBtn.addActionListener(e -> handleSubmit());
         panel.add(submitBtn, gbc);
 
@@ -181,6 +186,7 @@ public class GuiApp {
         exportBtn.setEnabled(false);
         exportBtn.setFont(new Font("Arial", Font.BOLD, 12));
         exportBtn.setPreferredSize(new Dimension(200, 35));
+        exportBtn.setToolTipText("Save the packing results to a JSON file for further analysis");
         exportBtn.addActionListener(e -> handleJsonExport());
         panel.add(exportBtn, gbc);
 
@@ -189,15 +195,60 @@ public class GuiApp {
 
     private void handleFileSelection() {
         JFileChooser chooser = new JFileChooser();
+        if (lastSelectedDirectory != null) {
+            chooser.setCurrentDirectory(new File(lastSelectedDirectory));
+        }
         chooser.setDialogTitle("Select CSV file with art details");
-        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("CSV Files", "csv"));
+        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("CSV Files (*.csv)", "csv"));
         int result = chooser.showOpenDialog(frame);
         
         if (result == JFileChooser.APPROVE_OPTION) {
             File file = chooser.getSelectedFile();
+            lastSelectedDirectory = file.getParent();
+            
+            // Validate file
+            if (file.length() == 0) {
+                showError("The selected file is empty. Please choose a file with data.");
+                return;
+            }
+            
+            if (file.length() > 10 * 1024 * 1024) { // 10MB limit
+                showError("The selected file is too large (over 10MB). Please choose a smaller file.");
+                return;
+            }
+            
             fileLabel.setText(file.getAbsolutePath());
             submitBtn.setEnabled(true);
             updateStatus("Ready - Click 'Submit for Estimate' to process", new Color(0, 100, 0));
+            
+            // Show preview of first few lines
+            try {
+                showFilePreview(file);
+            } catch (Exception ex) {
+                // Silently ignore preview errors
+            }
+        }
+    }
+
+    private void showFilePreview(File file) {
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(file))) {
+            StringBuilder preview = new StringBuilder();
+            preview.append("File: ").append(file.getName()).append(" (").append(file.length()).append(" bytes)\n");
+            preview.append("─────────────────────────────────────\n");
+            
+            String line;
+            int lineCount = 0;
+            while ((line = reader.readLine()) != null && lineCount < 3) {
+                preview.append(line).append("\n");
+                lineCount++;
+            }
+            
+            if (lineCount > 0) {
+                preview.append("─────────────────────────────────────\n");
+                System.out.println(preview.toString()); // Show in console for debugging
+            }
+        } catch (Exception e) {
+            // Silently fail for preview
         }
     }
 
@@ -212,6 +263,11 @@ public class GuiApp {
         File file = new File(filePath);
         if (!file.exists()) {
             showError("The selected file does not exist: " + filePath);
+            return;
+        }
+
+        if (file.length() == 0) {
+            showError("The selected file is empty. Please choose a file with data.");
             return;
         }
 
@@ -234,7 +290,8 @@ public class GuiApp {
                 
                 if (vm == null) {
                     SwingUtilities.invokeLater(() -> {
-                        showError("Processing completed but returned no packing plan.");
+                        showError("Processing completed but returned no packing plan.\n" +
+                                 "Please verify that your CSV file contains valid artwork data with positive dimensions.");
                         resetControls();
                     });
                 } else {
@@ -249,11 +306,16 @@ public class GuiApp {
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
                     showError("Processing failed: " + ex.getMessage() + 
-                             "\n\nPlease check that your CSV file is properly formatted.");
+                             "\n\nCommon issues:\n" +
+                             "• Missing or incorrect columns in CSV\n" +
+                             "• Invalid quantity, width, or height values\n" +
+                             "• Empty fields in required columns\n\n" +
+                             "Please check your CSV format and try again.");
                     resetControls();
                 });
             }
         });
+        processingThread.setName("CSV-Processing-Thread");
         processingThread.start();
     }
 

@@ -11,15 +11,20 @@ import java.util.List;
  * Supports two CSV formats:
  * - Old format: line number, quantity, tag number, Final medium, Outside Size Width, Outside Size Height, Glazing, ...
  * - New format: Line Number, Quantity, Location, Floor, Tag #, Outside Size Width, Outside Size Height, Final Medium, ..., Glazing, ...
+ *
+ * Enhanced with input validation and error tracking.
  */
 public class CsvParser implements ArtDataParser {
 
     private static final String CSV_DELIMITER = ",";
+    private List<String> parseWarnings = new ArrayList<>();
+    private int skippedLines = 0;
 
     @Override
     public List<ArtDataRecord> parse(String filePath) {
         List<ArtDataRecord> records = new ArrayList<>();
-        String line = "";
+        parseWarnings.clear();
+        skippedLines = 0;
 
         // The try-with-resources statement ensures the BufferedReader is closed automatically.
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
@@ -31,19 +36,46 @@ public class CsvParser implements ArtDataParser {
 
             FormatDetector detector = new FormatDetector(headerLine);
 
+            int lineNumber = 2; // Start from 2 since header is line 1
+            String line;
             while ((line = br.readLine()) != null) {
                 try {
                     String[] values = line.split(CSV_DELIMITER, -1); // -1 keeps trailing empty strings
                     
                     if (values.length < detector.getMinRequiredColumns()) {
-                        continue; // Skip malformed lines
+                        String warning = String.format("Line %d: Insufficient columns (expected %d, got %d). Skipping.",
+                                lineNumber, detector.getMinRequiredColumns(), values.length);
+                        parseWarnings.add(warning);
+                        skippedLines++;
+                        lineNumber++;
+                        continue;
                     }
 
                     int quantity = Integer.parseInt(values[detector.getQuantityIndex()].trim());
+                    
+                    // Validate quantity (allow zero but reject negative)
+                    if (quantity < 0) {
+                        String warning = String.format("Line %d: Quantity must be non-negative (%d provided). Skipping.", lineNumber, quantity);
+                        parseWarnings.add(warning);
+                        skippedLines++;
+                        lineNumber++;
+                        continue;
+                    }
+                    
                     String tagNumber = values[detector.getTagNumberIndex()].trim();
                     String finalMedium = values[detector.getFinalMediumIndex()].trim();
                     double width = Double.parseDouble(values[detector.getWidthIndex()].trim());
                     double height = Double.parseDouble(values[detector.getHeightIndex()].trim());
+                    
+                    // Validate dimensions
+                    if (width <= 0 || height <= 0) {
+                        String warning = String.format("Line %d: Dimensions must be positive (%.2f x %.2f). Skipping.",
+                                lineNumber, width, height);
+                        parseWarnings.add(warning);
+                        skippedLines++;
+                        lineNumber++;
+                        continue;
+                    }
                     
                     // Extract Glazing column if it exists
                     String glazing = "";
@@ -55,18 +87,40 @@ public class CsvParser implements ArtDataParser {
                     String combinedMaterialInfo = finalMedium + " " + glazing;
 
                     records.add(new ArtDataRecord(quantity, tagNumber, combinedMaterialInfo, width, height));
+                    lineNumber++;
                 } catch (NumberFormatException e) {
-                    System.err.println("Warning: Could not parse a number on line: " + line + ". Skipping.");
+                    String warning = String.format("Line %d: Invalid number format. Details: %s. Skipping.",
+                            lineNumber, e.getMessage());
+                    parseWarnings.add(warning);
+                    skippedLines++;
                 } catch (IndexOutOfBoundsException e) {
-                    System.err.println("Warning: Line does not have expected columns: " + line + ". Skipping.");
+                    String warning = String.format("Line %d: Column index out of bounds. Skipping.", lineNumber);
+                    parseWarnings.add(warning);
+                    skippedLines++;
                 }
             }
         } catch (IOException e) {
-            System.err.println("Error: Failed to read the file at " + filePath);
-            e.printStackTrace();
+            String errorMsg = String.format("Error reading file '%s': %s", filePath, e.getMessage());
+            parseWarnings.add(errorMsg);
         }
 
         return records;
+    }
+
+    /**
+     * Get all warnings accumulated during parsing.
+     * @return list of warning messages
+     */
+    public List<String> getParseWarnings() {
+        return new ArrayList<>(parseWarnings);
+    }
+
+    /**
+     * Get the number of lines skipped during parsing.
+     * @return number of skipped lines
+     */
+    public int getSkippedLineCount() {
+        return skippedLines;
     }
 
     /**
@@ -106,6 +160,7 @@ public class CsvParser implements ArtDataParser {
 
         private void detectOldFormat(String[] headers) {
             // Old format: line number, quantity, tag number, Final medium, Outside Size Width, Outside Size Height, Glazing, ...
+            // Fixed column indices for old format (headers parameter kept for consistency with detectNewFormat)
             quantityIndex = 1;
             tagNumberIndex = 2;
             finalMediumIndex = 3;
