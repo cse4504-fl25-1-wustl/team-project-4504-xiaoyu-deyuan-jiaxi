@@ -71,6 +71,12 @@ public class GuiApp {
     private ShipmentViewModel currentViewModel;
     private String lastSelectedDirectory;
     private String selectedFilePath;  // Store the actual file path separately
+    
+    // Visual panels for each tab
+    private JPanel summaryVisualPanel;
+    private JPanel detailedVisualPanel;
+    private JPanel containersVisualPanel;
+    private JPanel unpackedVisualPanel;
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new GuiApp().createAndShowGui());
@@ -139,8 +145,16 @@ public class GuiApp {
         outputArea.setForeground(Color.BLACK);
         outputArea.setCaretColor(primaryBlue);
         outputArea.setMargin(new Insets(10, 10, 10, 10));
-        JScrollPane summaryScroll = new JScrollPane(outputArea);
+        
+        JPanel summaryContentPanel = new JPanel(new BorderLayout(10, 10));
+        summaryContentPanel.setBackground(cardBg);
+        JPanel summaryVisualPanel = createVisualSummaryPanel();
+        summaryContentPanel.add(summaryVisualPanel, BorderLayout.NORTH);
+        summaryContentPanel.add(outputArea, BorderLayout.CENTER);
+        
+        JScrollPane summaryScroll = new JScrollPane(summaryContentPanel);
         summaryScroll.getViewport().setBackground(cardBg);
+        summaryScroll.setBorder(null);
         reportTabs.addTab("Summary Report", summaryScroll);
         
         // Detailed Report
@@ -150,8 +164,16 @@ public class GuiApp {
         detailedArea.setBackground(cardBg);
         detailedArea.setForeground(Color.BLACK);
         detailedArea.setMargin(new Insets(10, 10, 10, 10));
-        JScrollPane detailedScroll = new JScrollPane(detailedArea);
+        
+        JPanel detailedContentPanel = new JPanel(new BorderLayout(10, 10));
+        detailedContentPanel.setBackground(cardBg);
+        JPanel detailedVisualPanel = createDetailedVisualPanel();
+        detailedContentPanel.add(detailedVisualPanel, BorderLayout.NORTH);
+        detailedContentPanel.add(detailedArea, BorderLayout.CENTER);
+        
+        JScrollPane detailedScroll = new JScrollPane(detailedContentPanel);
         detailedScroll.getViewport().setBackground(cardBg);
+        detailedScroll.setBorder(null);
         reportTabs.addTab("Detailed Report", detailedScroll);
         
         // Containers Breakdown
@@ -161,8 +183,16 @@ public class GuiApp {
         containersArea.setBackground(cardBg);
         containersArea.setForeground(Color.BLACK);
         containersArea.setMargin(new Insets(10, 10, 10, 10));
-        JScrollPane containersScroll = new JScrollPane(containersArea);
+        
+        JPanel containersContentPanel = new JPanel(new BorderLayout(10, 10));
+        containersContentPanel.setBackground(cardBg);
+        JPanel containersVisualPanel = createContainersVisualPanel();
+        containersContentPanel.add(containersVisualPanel, BorderLayout.NORTH);
+        containersContentPanel.add(containersArea, BorderLayout.CENTER);
+        
+        JScrollPane containersScroll = new JScrollPane(containersContentPanel);
         containersScroll.getViewport().setBackground(cardBg);
+        containersScroll.setBorder(null);
         reportTabs.addTab("Containers Breakdown", containersScroll);
         
         // Unpacked Items
@@ -172,8 +202,16 @@ public class GuiApp {
         unpackedArea.setBackground(cardBg);
         unpackedArea.setForeground(Color.BLACK);
         unpackedArea.setMargin(new Insets(10, 10, 10, 10));
-        JScrollPane unpackedScroll = new JScrollPane(unpackedArea);
+        
+        JPanel unpackedContentPanel = new JPanel(new BorderLayout(10, 10));
+        unpackedContentPanel.setBackground(cardBg);
+        JPanel unpackedVisualPanel = createUnpackedVisualPanel();
+        unpackedContentPanel.add(unpackedVisualPanel, BorderLayout.NORTH);
+        unpackedContentPanel.add(unpackedArea, BorderLayout.CENTER);
+        
+        JScrollPane unpackedScroll = new JScrollPane(unpackedContentPanel);
         unpackedScroll.getViewport().setBackground(cardBg);
+        unpackedScroll.setBorder(null);
         reportTabs.addTab("Unpacked Items", unpackedScroll);
 
         centerPanel.add(reportTabs, BorderLayout.CENTER);
@@ -497,7 +535,111 @@ public class GuiApp {
         }
     }
 
+    private JPanel createVisualSummaryPanel() {
+        JPanel panel = new JPanel(new GridLayout(1, 4, 15, 0));
+        panel.setBackground(new Color(245, 245, 245));
+        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        
+        panel.add(createMetricCard("Total Cost", "$0.00", "💰"));
+        panel.add(createMetricCard("Total Weight", "0.00 lbs", "⚖️"));
+        panel.add(createMetricCard("Containers", "0", "📦"));
+        panel.add(createMetricCard("Boxes", "0", "📦"));
+        
+        return panel;
+    }
+    
+    private JPanel createDetailedVisualPanel() {
+        JPanel panel = new JPanel(new GridLayout(1, 4, 15, 0));
+        panel.setBackground(new Color(245, 245, 245));
+        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        
+        panel.add(createMetricCard("Total Pieces", "0", "🎨"));
+        panel.add(createMetricCard("Packed", "0", "✓"));
+        panel.add(createMetricCard("Unpacked", "0", "⚠️"));
+        panel.add(createMetricCard("Success Rate", "0%", "📊"));
+        
+        return panel;
+    }
+    
+    private JPanel createContainersVisualPanel() {
+        JPanel panel = new JPanel(new GridLayout(1, 4, 15, 0));
+        panel.setBackground(new Color(245, 245, 245));
+        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        
+        panel.add(createMetricCard("Total Containers", "0", "📦"));
+        panel.add(createMetricCard("Standard Pallets", "0", "🏗️"));
+        panel.add(createMetricCard("Oversized Pallets", "0", "📐"));
+        panel.add(createMetricCard("Crates", "0", "🗃️"));
+        
+        return panel;
+    }
+    
+    private JPanel createUnpackedVisualPanel() {
+        JPanel panel = new JPanel(new GridLayout(1, 4, 15, 0));
+        panel.setBackground(new Color(245, 245, 245));
+        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        
+        panel.add(createMetricCard("Unpacked Items", "0", "⚠️"));
+        panel.add(createMetricCard("Packing Success", "100%", "✓"));
+        panel.add(createMetricCard("Total Weight", "0 kg", "⚖️"));
+        panel.add(createMetricCard("Status", "OK", "✓"));
+        
+        return panel;
+    }
+    
+    private JPanel createMetricCard(String label, String value, String icon) {
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(Color.WHITE);
+        card.setBorder(new javax.swing.border.CompoundBorder(
+            BorderFactory.createLineBorder(Color.BLACK, 1),
+            new EmptyBorder(15, 10, 15, 10)
+        ));
+        
+        // Icon
+        JLabel iconLabel = new JLabel(icon);
+        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 32));
+        iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        card.add(iconLabel);
+        
+        card.add(Box.createVerticalStrut(10));
+        
+        // Value
+        JLabel valueLabel = new JLabel(value);
+        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        valueLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        valueLabel.setForeground(Color.BLACK);
+        card.add(valueLabel);
+        
+        card.add(Box.createVerticalStrut(5));
+        
+        // Label
+        JLabel labelLabel = new JLabel(label);
+        labelLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        labelLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        labelLabel.setForeground(new Color(100, 100, 100));
+        card.add(labelLabel);
+        
+        return card;
+    }
+    
+    private void updateMetricCard(JPanel containerPanel, int cardIndex, String newValue) {
+        JPanel card = (JPanel) containerPanel.getComponent(cardIndex);
+        // The value label is the second component (index 2: icon, strut, value, strut, label)
+        JLabel valueLabel = (JLabel) card.getComponent(2);
+        valueLabel.setText(newValue);
+    }
+
     private void displayResults(ShipmentViewModel vm) {
+        // Update Summary Visual Panel
+        JScrollPane summaryScroll = (JScrollPane) reportTabs.getComponentAt(0);
+        JPanel summaryContentPanel = (JPanel) summaryScroll.getViewport().getView();
+        JPanel summaryVisual = (JPanel) summaryContentPanel.getComponent(0);
+        updateMetricCard(summaryVisual, 0, String.format("$%.2f", vm.totalCost()));
+        updateMetricCard(summaryVisual, 1, String.format("%.2f lbs", vm.totalWeight()));
+        updateMetricCard(summaryVisual, 2, String.valueOf(vm.totalContainers()));
+        updateMetricCard(summaryVisual, 3, String.valueOf(vm.totalBoxes()));
+        
         // Summary Report - matches CLI "Shipment Plan Summary"
         StringBuilder summary = new StringBuilder();
         summary.append("========================================\n");
@@ -524,16 +666,64 @@ public class GuiApp {
         
         outputArea.setText(summary.toString());
 
+        // Update Detailed Visual Panel
+        JScrollPane detailedScroll = (JScrollPane) reportTabs.getComponentAt(1);
+        JPanel detailedContentPanel = (JPanel) detailedScroll.getViewport().getView();
+        JPanel detailedVisual = (JPanel) detailedContentPanel.getComponent(0);
+        int totalPieces = allArts.size() + customPieceCount;
+        double successRate = totalPieces > 0 ? (allArts.size() / (double) totalPieces) * 100 : 100;
+        updateMetricCard(detailedVisual, 0, String.valueOf(totalPieces));
+        updateMetricCard(detailedVisual, 1, String.valueOf(allArts.size()));
+        updateMetricCard(detailedVisual, 2, String.valueOf(customPieceCount));
+        updateMetricCard(detailedVisual, 3, String.format("%.1f%%", successRate));
+        
         // Detailed Report
-        JTextArea detailedArea = (JTextArea) ((JScrollPane) reportTabs.getComponentAt(1)).getViewport().getView();
+        JTextArea detailedArea = (JTextArea) detailedContentPanel.getComponent(1);
         detailedArea.setText(generateDetailedReport(vm));
 
+        // Update Containers Visual Panel
+        JScrollPane containersScroll = (JScrollPane) reportTabs.getComponentAt(2);
+        JPanel containersContentPanel = (JPanel) containersScroll.getViewport().getView();
+        JPanel containersVisual = (JPanel) containersContentPanel.getComponent(0);
+        int standardPallets = 0, oversizedPallets = 0, crates = 0;
+        for (ContainerViewModel container : vm.containers()) {
+            String type = container.type();
+            if ("STANDARD_PALLET".equals(type) || "GLASS_PALLET".equals(type)) {
+                standardPallets++;
+            } else if ("OVERSIZE_PALLET".equals(type)) {
+                oversizedPallets++;
+            } else if ("STANDARD_CRATE".equals(type)) {
+                crates++;
+            }
+        }
+        updateMetricCard(containersVisual, 0, String.valueOf(vm.totalContainers()));
+        updateMetricCard(containersVisual, 1, String.valueOf(standardPallets));
+        updateMetricCard(containersVisual, 2, String.valueOf(oversizedPallets));
+        updateMetricCard(containersVisual, 3, String.valueOf(crates));
+        
         // Containers Breakdown
-        JTextArea containersArea = (JTextArea) ((JScrollPane) reportTabs.getComponentAt(2)).getViewport().getView();
+        JTextArea containersArea = (JTextArea) containersContentPanel.getComponent(1);
         containersArea.setText(generateContainersReport(vm));
 
+        // Update Unpacked Visual Panel
+        JScrollPane unpackedScroll = (JScrollPane) reportTabs.getComponentAt(3);
+        JPanel unpackedContentPanel = (JPanel) unpackedScroll.getViewport().getView();
+        JPanel unpackedVisual = (JPanel) unpackedContentPanel.getComponent(0);
+        int unpackedCount = vm.unpackedArts() != null ? vm.unpackedArts().size() : 0;
+        double packingSuccess = totalPieces > 0 ? (allArts.size() / (double) totalPieces) * 100 : 100;
+        double unpackedWeight = 0;
+        if (vm.unpackedArts() != null) {
+            for (ArtViewModel art : vm.unpackedArts()) {
+                unpackedWeight += art.weight();
+            }
+        }
+        updateMetricCard(unpackedVisual, 0, String.valueOf(unpackedCount));
+        updateMetricCard(unpackedVisual, 1, String.format("%.1f%%", packingSuccess));
+        updateMetricCard(unpackedVisual, 2, String.format("%.2f kg", unpackedWeight));
+        updateMetricCard(unpackedVisual, 3, unpackedCount == 0 ? "OK" : "WARNING");
+        
         // Unpacked Items
-        JTextArea unpackedArea = (JTextArea) ((JScrollPane) reportTabs.getComponentAt(3)).getViewport().getView();
+        JTextArea unpackedArea = (JTextArea) unpackedContentPanel.getComponent(1);
         unpackedArea.setText(generateUnpackedReport(vm));
 
         // Enable export button
