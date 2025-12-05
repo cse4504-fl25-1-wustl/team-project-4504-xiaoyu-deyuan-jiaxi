@@ -11,6 +11,10 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetAdapter;
+import java.awt.dnd.DropTargetDropEvent;
 import java.io.File;
 
 /**
@@ -37,6 +41,7 @@ public class GuiApp {
     private JTabbedPane reportTabs;
     private ShipmentViewModel currentViewModel;
     private String lastSelectedDirectory;
+    private String selectedFilePath;  // Store the actual file path separately
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new GuiApp().createAndShowGui());
@@ -129,13 +134,70 @@ public class GuiApp {
 
         gbc.gridx = 1;
         gbc.weightx = 1.0;
-        fileLabel = new JLabel("No file selected");
+        fileLabel = new JLabel("<html><div style='text-align:center;'><b>↓ Drag & Drop CSV Here ↓</b><br/><small>or click Browse</small><br/><small style='color: #888;'>No file selected</small></div></html>");
         fileLabel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.LIGHT_GRAY),
-            new EmptyBorder(3, 5, 3, 5)
+            BorderFactory.createLineBorder(new Color(100, 150, 255), 2),
+            new EmptyBorder(10, 10, 10, 10)
         ));
-        fileLabel.setBackground(Color.WHITE);
+        fileLabel.setBackground(new Color(230, 240, 255));
         fileLabel.setOpaque(true);
+        fileLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        fileLabel.setVerticalAlignment(SwingConstants.CENTER);
+        fileLabel.setPreferredSize(new Dimension(250, 70));
+        fileLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        fileLabel.setForeground(new Color(50, 100, 200));
+        
+        // Enable drag and drop
+        new DropTarget(fileLabel, new java.awt.dnd.DropTargetAdapter() {
+            @Override
+            public void drop(java.awt.dnd.DropTargetDropEvent e) {
+                try {
+                    e.acceptDrop(java.awt.dnd.DnDConstants.ACTION_COPY);
+                    java.util.List<?> droppedFiles = (java.util.List<?>) e.getTransferable()
+                        .getTransferData(java.awt.datatransfer.DataFlavor.javaFileListFlavor);
+                    
+                    if (!droppedFiles.isEmpty()) {
+                        File droppedFile = (File) droppedFiles.get(0);
+                        
+                        if (!droppedFile.getName().toLowerCase().endsWith(".csv")) {
+                            showError("Please drop a CSV file. Selected file: " + droppedFile.getName());
+                            return;
+                        }
+                        
+                        if (!droppedFile.exists()) {
+                            showError("File does not exist: " + droppedFile.getName());
+                            return;
+                        }
+                        
+                        if (droppedFile.length() == 0) {
+                            showError("The dropped file is empty. Please choose a file with data.");
+                            return;
+                        }
+                        
+                        if (droppedFile.length() > 10 * 1024 * 1024) {
+                            showError("The file is too large (over 10MB). Please choose a smaller file.");
+                            return;
+                        }
+                        
+                        fileLabel.setText("<html><div style='text-align:center;'><font color='green'><b>✓ File Loaded</b></font><br/>" + droppedFile.getName() + "</div></html>");
+                        selectedFilePath = droppedFile.getAbsolutePath();
+                        lastSelectedDirectory = droppedFile.getParent();
+                        submitBtn.setEnabled(true);
+                        updateStatus("Ready - Click 'Submit for Estimate' to process", new Color(0, 100, 0));
+                        
+                        try {
+                            showFilePreview(droppedFile);
+                        } catch (Exception ex) {
+                            // Silently ignore
+                        }
+                    }
+                    e.dropComplete(true);
+                } catch (Exception ex) {
+                    e.dropComplete(false);
+                }
+            }
+        });
+        
         panel.add(fileLabel, gbc);
 
         gbc.gridx = 2;
@@ -218,6 +280,7 @@ public class GuiApp {
             }
             
             fileLabel.setText(file.getAbsolutePath());
+            selectedFilePath = file.getAbsolutePath();
             submitBtn.setEnabled(true);
             updateStatus("Ready - Click 'Submit for Estimate' to process", new Color(0, 100, 0));
             
@@ -253,7 +316,7 @@ public class GuiApp {
     }
 
     private void handleSubmit() {
-        String filePath = fileLabel.getText();
+        String filePath = selectedFilePath != null ? selectedFilePath : fileLabel.getText();
         
         if (filePath == null || filePath.isBlank() || filePath.equals("No file selected")) {
             showError("Please select a CSV file before submitting.");
