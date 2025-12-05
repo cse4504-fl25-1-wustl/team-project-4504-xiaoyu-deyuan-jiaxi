@@ -289,4 +289,50 @@ public class CsvParserTest {
 		List<ArtDataRecord> b = p.parse(tmp.getAbsolutePath());
 		assertEquals(1, b.size());
 	}
+
+	@Test
+	void parseSupportsNewFormatWithDifferentColumnOrder() throws Exception {
+		File tmp = Files.createTempFile("arts", ".csv").toFile();
+		try (FileWriter w = new FileWriter(tmp)) {
+			// New format: Line Number, Quantity, Location, Floor, Tag #, Outside Size Width, Outside Size Height, Final Medium, ...
+			w.write("Line Number,Quantity,Location,Floor,Tag #,Outside Size Width,Outside Size Height,Final Medium,new: Presentation Conversion,Item #,new: Item URL,Glazing,Frame 1 Moulding,Hardware\n");
+			w.write("1,1,,,1,31.375,45.375,Paper Print - Framed,,,,Regular Glass,475130-BX,4 pt Sec\n");
+			w.write("2,1,,,2,27,27,Canvas - Float Frame,,,,No Glass,313-301-BX,3 pt Sec\n");
+		}
+
+		CsvParser p = new CsvParser();
+		List<ArtDataRecord> records = p.parse(tmp.getAbsolutePath());
+
+		assertEquals(2, records.size());
+		// Tag # is at index 4 in new format
+		assertEquals("1", records.get(0).tagNumber());
+		assertEquals(1, records.get(0).quantity());
+		assertEquals(31.375, records.get(0).width());
+		assertEquals(45.375, records.get(0).height());
+		assertEquals("2", records.get(1).tagNumber());
+		assertEquals(27, records.get(1).width());
+	}
+
+	@Test
+	void parseSupportsOldFormatConsistently() throws Exception {
+		File tmp = Files.createTempFile("arts", ".csv").toFile();
+		try (FileWriter w = new FileWriter(tmp)) {
+			// Old format: line number, quantity, tag number, Final medium, Outside Size Width, Outside Size Height, Glazing, ...
+			w.write("line number,quantity,tag number,Final medium,Outside Size Width,Outside Size Height,Glazing,Frame 1 Moulding,Hardware\n");
+			w.write("1,49,1,Paper Print - Framed,33,43,Regular Glass,N/A,N/A\n");
+			w.write("2,2,2,Paper Print - Framed,34,46,Regular Glass,N/A,N/A\n");
+		}
+
+		CsvParser p = new CsvParser();
+		List<ArtDataRecord> records = p.parse(tmp.getAbsolutePath());
+
+		assertEquals(2, records.size());
+		// tag number is at index 2 in old format
+		assertEquals("1", records.get(0).tagNumber());
+		assertEquals(49, records.get(0).quantity());
+		assertEquals(33, records.get(0).width());
+		assertEquals(43, records.get(0).height());
+		assertEquals("2", records.get(1).tagNumber());
+		assertEquals(2, records.get(1).quantity());
+	}
 }
