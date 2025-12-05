@@ -1,3 +1,0 @@
-Rule: 
-Generally, if a box contains a 4-piece type art (acoustic panels and canvases), we will only put 4 arts inside; if a box contains a 6-piece type art but no 4-piece type, we can only fit 4 inside and so on.
-But the only goal is to minimize the weight, and boxes are weightless, so google solver may give different results...

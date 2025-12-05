@@ -1,0 +1,20 @@
+{
+    "total_pieces": 401,
+    "standard_size_pieces": 301,
+    "standard_box_count": 60,
+    "large_box_count": 25,
+    "custom_piece_count": 0,
+    "standard_pallet_count": 11,
+    "oversized_pallet_count": 10,
+    "crate_count": 0,
+    "final_shipment_weight": 5964.0,
+    "total_artwork_weight": 4554.0,
+    "total_packaging_weight": 1410.0,
+    "oversized_pieces": [
+        {
+            "side1": 40.0,
+            "side2": 45.0,
+            "quantity": 100
+        }
+    ]
+}

@@ -1,5 +1,7 @@
 line number, quantity, tag number, Final medium, Outside Size Width, Outside Size Height, Glazing, Frame 1 Moulding, Hardware
-1,16,1, Paper Print - Framed,63,12,Acrylic, N/A, N/A
-2,25,1, Paper Print - Framed,12,53,Glass, N/A, N/A
+1,316,1, Paper Print - Framed,63,12,Acrylic, N/A, N/A
+2,27,1, Paper Print - Framed,12,53,Glass, N/A, N/A
 3,40,1, Paper Print - Framed,37,45,Acrylic, N/A, N/A
-4,38,1, Paper Print - Framed,47,37,Glass, N/A, N/A
+4,33,1, Paper Print - Framed,47,37,Glass, N/A, N/A
+3,1,1,Canvas - Float Frame,45,37,, N/A, N/A
+3,1,1,Acoustic panel,37,45,, N/A, N/A

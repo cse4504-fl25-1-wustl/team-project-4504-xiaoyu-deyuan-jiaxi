@@ -179,6 +179,9 @@ public class OptimizationService {
                 List<Container> containers = buildContainersFromSolution(
                     solution, artRequirements, boxesNeeded, containerCapacities, constraints);
 
+                // Post-processing: consolidate underutilized containers
+                containers = consolidateUnderutilizedContainers(containers, constraints);
+
                 double totalCost = containers.stream()
                     .mapToDouble(costStrategy::calculateCost)
                     .sum();
@@ -510,7 +513,173 @@ public class OptimizationService {
             .filter(container -> !container.getBoxesInContainer().isEmpty())
             .collect(Collectors.toList());
 
-        return nonEmptyContainers;
+        // Post-processing: Consolidate under-utilized containers
+        List<Container> optimizedContainers = consolidateContainers(nonEmptyContainers, containerCapacities, constraints);
+
+        return optimizedContainers;
+    }
+
+    /**
+     * Post-processing optimization: Consolidate under-utilized containers.
+     * 
+     * Strategy:
+     * 1. Find containers with low utilization (e.g., only 1-2 boxes when capacity is 3-4)
+     * 2. Try to merge boxes from multiple under-utilized containers into fewer containers
+     * 3. When needed, upgrade STANDARD_PALLET to OVERSIZE_PALLET to gain extra capacity
+     * 
+     * Example optimization:
+     * - Container A (STANDARD_PALLET): 2 STANDARD + 1 LARGE (3 boxes, but could fit more with upgrade)
+     * - Container B (STANDARD_PALLET): 1 LARGE (very under-utilized)
+     * After optimization:
+     * - Container A becomes OVERSIZE_PALLET: 2 LARGE + 1 STANDARD (consolidate the LARGE boxes)
+     * - Upgrade another STANDARD_PALLET to OVERSIZE_PALLET to hold the extra STANDARD box
+     * - Remove Container B
+     */
+    private List<Container> consolidateContainers(
+            List<Container> containers,
+            Map<ContainerType, Map<BoxType, Integer>> containerCapacities,
+            UserConstraints constraints) {
+        
+        // Check if OVERSIZE_PALLET is allowed
+        List<ContainerType> allowedTypes = constraints.getAllowedContainerTypes();
+        boolean oversizeAllowed = allowedTypes.isEmpty() || allowedTypes.contains(ContainerType.OVERSIZE_PALLET);
+        
+        if (!oversizeAllowed) {
+            return containers; // Can't optimize without OVERSIZE_PALLET option
+        }
+        
+        List<Container> result = new ArrayList<>(containers);
+        boolean improved = true;
+        
+        while (improved) {
+            improved = false;
+            
+            // Find under-utilized STANDARD_PALLETs (containers that could benefit from consolidation)
+            List<Container> underUtilizedStandard = result.stream()
+                .filter(c -> c.getContainerType() == ContainerType.STANDARD_PALLET)
+                .filter(c -> {
+                    int boxCount = c.getBoxesInContainer().size();
+                    boolean hasLarge = c.getBoxesInContainer().stream()
+                        .anyMatch(b -> b.getBoxType() == BoxType.LARGE);
+                    // Under-utilized if: has LARGE boxes but less than 3, or has few boxes overall
+                    return (hasLarge && boxCount < 3) || (!hasLarge && boxCount < 3);
+                })
+                .collect(Collectors.toList());
+            
+            if (underUtilizedStandard.size() < 2) {
+                break; // Need at least 2 under-utilized containers to consolidate
+            }
+            
+            // Try to find two containers that can be merged
+            for (int i = 0; i < underUtilizedStandard.size() && !improved; i++) {
+                Container containerA = underUtilizedStandard.get(i);
+                
+                for (int j = i + 1; j < underUtilizedStandard.size() && !improved; j++) {
+                    Container containerB = underUtilizedStandard.get(j);
+                    
+                    // Count boxes by type across both containers
+                    int largeBoxCount = 0;
+                    int standardBoxCount = 0;
+                    List<Box> allBoxes = new ArrayList<>();
+                    
+                    for (Box box : containerA.getBoxesInContainer()) {
+                        allBoxes.add(box);
+                        if (box.getBoxType() == BoxType.LARGE) largeBoxCount++;
+                        else if (box.getBoxType() == BoxType.STANDARD) standardBoxCount++;
+                    }
+                    for (Box box : containerB.getBoxesInContainer()) {
+                        allBoxes.add(box);
+                        if (box.getBoxType() == BoxType.LARGE) largeBoxCount++;
+                        else if (box.getBoxType() == BoxType.STANDARD) standardBoxCount++;
+                    }
+                    
+                    // Check if we can fit everything in fewer containers with OVERSIZE_PALLET
+                    // OVERSIZE_PALLET: LARGE capacity = 3, STANDARD capacity = 5
+                    // STANDARD_PALLET: LARGE capacity = 3, STANDARD capacity = 4
+                    
+                    // Case 1: All boxes can fit in one OVERSIZE_PALLET
+                    if (largeBoxCount <= 3 && standardBoxCount == 0) {
+                        // Merge into one OVERSIZE_PALLET with all LARGE boxes
+                        Container newContainer = createNewContainer(ContainerType.OVERSIZE_PALLET);
+                        for (Box box : allBoxes) {
+                            newContainer.addBox(box);
+                        }
+                        result.remove(containerA);
+                        result.remove(containerB);
+                        result.add(newContainer);
+                        improved = true;
+                    }
+                    // Case 2: Mixed boxes - can we consolidate with OVERSIZE upgrade?
+                    else if (largeBoxCount > 0 && standardBoxCount > 0) {
+                        // Total boxes in mixed mode = min(LARGE_cap, STANDARD_cap) = 3 for both pallet types
+                        int totalBoxes = largeBoxCount + standardBoxCount;
+                        
+                        if (totalBoxes <= 3) {
+                            // All can fit in one container (either type works)
+                            Container newContainer = createNewContainer(ContainerType.STANDARD_PALLET);
+                            for (Box box : allBoxes) {
+                                newContainer.addBox(box);
+                            }
+                            result.remove(containerA);
+                            result.remove(containerB);
+                            result.add(newContainer);
+                            improved = true;
+                        } else if (totalBoxes <= 4 && largeBoxCount <= 3) {
+                            // Need to redistribute: put LARGE boxes in one container, STANDARD in another
+                            // But with OVERSIZE, we can fit 5 STANDARD boxes
+                            // Strategy: Use OVERSIZE_PALLET for the extra capacity
+                            
+                            List<Box> largeBoxes = allBoxes.stream()
+                                .filter(b -> b.getBoxType() == BoxType.LARGE)
+                                .collect(Collectors.toList());
+                            List<Box> standardBoxes = allBoxes.stream()
+                                .filter(b -> b.getBoxType() == BoxType.STANDARD)
+                                .collect(Collectors.toList());
+                            
+                            // Put LARGE boxes in one container, STANDARD in OVERSIZE
+                            if (largeBoxCount <= 3 && standardBoxCount <= 5) {
+                                Container largeContainer = createNewContainer(ContainerType.STANDARD_PALLET);
+                                for (Box box : largeBoxes) {
+                                    largeContainer.addBox(box);
+                                }
+                                
+                                Container standardContainer = createNewContainer(ContainerType.OVERSIZE_PALLET);
+                                for (Box box : standardBoxes) {
+                                    standardContainer.addBox(box);
+                                }
+                                
+                                // Only consolidate if we reduce container count
+                                if (largeBoxes.isEmpty() || standardBoxes.isEmpty()) {
+                                    // One of them is empty, just use the non-empty one
+                                    result.remove(containerA);
+                                    result.remove(containerB);
+                                    if (!largeBoxes.isEmpty()) result.add(largeContainer);
+                                    if (!standardBoxes.isEmpty()) result.add(standardContainer);
+                                    improved = true;
+                                }
+                            }
+                        }
+                    }
+                    // Case 3: Only STANDARD boxes - check if OVERSIZE helps
+                    else if (largeBoxCount == 0 && standardBoxCount > 0) {
+                        // STANDARD_PALLET holds 4, OVERSIZE_PALLET holds 5
+                        if (standardBoxCount <= 5) {
+                            // Can fit in one OVERSIZE_PALLET
+                            Container newContainer = createNewContainer(ContainerType.OVERSIZE_PALLET);
+                            for (Box box : allBoxes) {
+                                newContainer.addBox(box);
+                            }
+                            result.remove(containerA);
+                            result.remove(containerB);
+                            result.add(newContainer);
+                            improved = true;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return result;
     }
 
     // Fallback method with unpacked arts tracking
@@ -615,6 +784,166 @@ public class OptimizationService {
         String id = "Container-" + containerIdCounter++;
         return new Container(id, type, type.getWidth(), type.getLength(), 
             type.getMinHeight(), type.getWeight(), type.getBaseHeight());
+    }
+
+    /**
+     * Post-processing optimization: consolidate underutilized containers.
+     * 
+     * Strategy:
+     * 1. Find STANDARD_PALLETs with mixed box types (STANDARD + LARGE) that have low utilization
+     * 2. Try to move LARGE boxes from underutilized pallets to other pallets with LARGE boxes
+     * 3. If a STANDARD_PALLET has only 1 LARGE box left, try merging with another underutilized pallet
+     * 4. Convert some STANDARD_PALLETs to OVERSIZE_PALLETs when it saves containers
+     */
+    private List<Container> consolidateUnderutilizedContainers(List<Container> containers, UserConstraints constraints) {
+        // Check if OVERSIZE_PALLET is allowed
+        List<ContainerType> allowedTypes = constraints.getAllowedContainerTypes();
+        boolean oversizeAllowed = allowedTypes.isEmpty() || allowedTypes.contains(ContainerType.OVERSIZE_PALLET);
+        
+        if (!oversizeAllowed) {
+            return containers; // Can't optimize if OVERSIZE_PALLET not allowed
+        }
+        
+        List<Container> result = new ArrayList<>(containers);
+        boolean improved = true;
+        
+        while (improved) {
+            improved = false;
+            
+            // Find underutilized STANDARD_PALLETs (those with capacity to spare)
+            List<Container> standardPallets = result.stream()
+                .filter(c -> c.getContainerType() == ContainerType.STANDARD_PALLET)
+                .collect(Collectors.toList());
+            
+            // Try to consolidate pallets with LARGE boxes
+            improved = tryConsolidateLargeBoxPallets(result, standardPallets);
+            
+            if (!improved) {
+                // Try to upgrade a STANDARD_PALLET to OVERSIZE_PALLET to absorb extra boxes
+                improved = tryUpgradeToOversizePallet(result, standardPallets);
+            }
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Try to consolidate LARGE boxes from underutilized pallets.
+     * If one pallet has 1-2 LARGE boxes and another pallet has room, move them.
+     */
+    private boolean tryConsolidateLargeBoxPallets(List<Container> containers, List<Container> standardPallets) {
+        // Find pallets with LARGE boxes that aren't full (capacity 3 for LARGE)
+        List<Container> palletsWithLargeBoxes = standardPallets.stream()
+            .filter(c -> c.getBoxesInContainer().stream().anyMatch(b -> b.getBoxType() == BoxType.LARGE))
+            .collect(Collectors.toList());
+        
+        if (palletsWithLargeBoxes.size() < 2) {
+            return false; // Need at least 2 pallets to consolidate
+        }
+        
+        // Sort by number of LARGE boxes (ascending) - try to empty the one with fewest first
+        palletsWithLargeBoxes.sort(Comparator.comparingInt(c -> 
+            (int) c.getBoxesInContainer().stream().filter(b -> b.getBoxType() == BoxType.LARGE).count()));
+        
+        for (int i = 0; i < palletsWithLargeBoxes.size(); i++) {
+            Container source = palletsWithLargeBoxes.get(i);
+            List<Box> sourceLargeBoxes = source.getBoxesInContainer().stream()
+                .filter(b -> b.getBoxType() == BoxType.LARGE)
+                .collect(Collectors.toList());
+            
+            if (sourceLargeBoxes.isEmpty()) continue;
+            
+            // Find a target pallet that can accept these LARGE boxes
+            for (int j = i + 1; j < palletsWithLargeBoxes.size(); j++) {
+                Container target = palletsWithLargeBoxes.get(j);
+                long targetLargeCount = target.getBoxesInContainer().stream()
+                    .filter(b -> b.getBoxType() == BoxType.LARGE).count();
+                
+                int availableSpace = 3 - (int) targetLargeCount; // LARGE capacity is 3
+                
+                if (availableSpace > 0 && sourceLargeBoxes.size() <= availableSpace) {
+                    // Move all LARGE boxes from source to target
+                    for (Box box : sourceLargeBoxes) {
+                        source.removeBox(box);
+                        target.addBox(box);
+                    }
+                    
+                    // If source is now empty, remove it
+                    if (source.getBoxesInContainer().isEmpty()) {
+                        containers.remove(source);
+                    }
+                    
+                    return true; // Made an improvement
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Try to upgrade a STANDARD_PALLET to OVERSIZE_PALLET to absorb extra STANDARD boxes.
+     * OVERSIZE_PALLET can hold 5 STANDARD boxes vs 4 for STANDARD_PALLET.
+     */
+    private boolean tryUpgradeToOversizePallet(List<Container> containers, List<Container> standardPallets) {
+        // Find pallets with only STANDARD boxes that are full (4 boxes)
+        List<Container> fullStandardOnlyPallets = standardPallets.stream()
+            .filter(c -> c.getBoxesInContainer().stream().allMatch(b -> b.getBoxType() == BoxType.STANDARD))
+            .filter(c -> c.getBoxesInContainer().size() == 4)
+            .collect(Collectors.toList());
+        
+        // Find pallets with STANDARD boxes that are underutilized (1-3 boxes, no LARGE)
+        List<Container> underutilizedStandardPallets = standardPallets.stream()
+            .filter(c -> c.getBoxesInContainer().stream().allMatch(b -> b.getBoxType() == BoxType.STANDARD))
+            .filter(c -> c.getBoxesInContainer().size() > 0 && c.getBoxesInContainer().size() < 4)
+            .collect(Collectors.toList());
+        
+        if (fullStandardOnlyPallets.isEmpty() || underutilizedStandardPallets.isEmpty()) {
+            return false;
+        }
+        
+        // Check if upgrading one full pallet to OVERSIZE would allow absorbing an underutilized pallet
+        for (Container fullPallet : fullStandardOnlyPallets) {
+            for (Container underutilized : underutilizedStandardPallets) {
+                int underutilizedCount = underutilized.getBoxesInContainer().size();
+                
+                // After upgrade, OVERSIZE has 5 capacity. Full pallet has 4.
+                // So we have 1 extra slot. If underutilized has exactly 1 box, we can absorb it.
+                if (underutilizedCount == 1) {
+                    // Upgrade fullPallet to OVERSIZE_PALLET
+                    Container oversizePallet = new Container(
+                        fullPallet.getId(), 
+                        ContainerType.OVERSIZE_PALLET,
+                        ContainerType.OVERSIZE_PALLET.getWidth(),
+                        ContainerType.OVERSIZE_PALLET.getLength(),
+                        ContainerType.OVERSIZE_PALLET.getMinHeight(),
+                        ContainerType.OVERSIZE_PALLET.getWeight(),
+                        ContainerType.OVERSIZE_PALLET.getBaseHeight()
+                    );
+                    
+                    // Move all boxes from full pallet to new oversize pallet
+                    for (Box box : new ArrayList<>(fullPallet.getBoxesInContainer())) {
+                        fullPallet.removeBox(box);
+                        oversizePallet.addBox(box);
+                    }
+                    
+                    // Move the 1 box from underutilized pallet
+                    for (Box box : new ArrayList<>(underutilized.getBoxesInContainer())) {
+                        underutilized.removeBox(box);
+                        oversizePallet.addBox(box);
+                    }
+                    
+                    // Replace fullPallet with oversizePallet, remove underutilized
+                    int idx = containers.indexOf(fullPallet);
+                    containers.set(idx, oversizePallet);
+                    containers.remove(underutilized);
+                    
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 
     /**

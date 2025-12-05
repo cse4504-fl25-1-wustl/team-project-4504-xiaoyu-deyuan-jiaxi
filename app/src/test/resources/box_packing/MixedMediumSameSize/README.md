@@ -1,0 +1,1 @@
+These test cases assume that box capacity is determied by the medium that has the most restrictive capacity. For example, if we are mixing Canvas and Prints in a box, we can fit 4 items in a box, because that's how many Canvas items we can fit (that's more restrictive than 6 per box for Prints).

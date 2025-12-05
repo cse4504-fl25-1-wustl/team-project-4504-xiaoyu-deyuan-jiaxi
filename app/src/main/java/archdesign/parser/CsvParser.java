@@ -142,6 +142,8 @@ public class CsvParser implements ArtDataParser {
         private void detectFormat(String[] headers) {
             // Try to detect format by looking for key header names
             boolean isNewFormat = false;
+            boolean hasNamedColumns = false;
+            
             for (String header : headers) {
                 String normalized = header.trim().toLowerCase();
                 // New format has headers like "Tag #", "new: Presentation Conversion", etc.
@@ -149,10 +151,19 @@ public class CsvParser implements ArtDataParser {
                     isNewFormat = true;
                     break;
                 }
+                // Check if headers contain recognizable column names (for column-order-independent parsing)
+                // Supports both spaced ("tag number") and no-space ("tagnumber") formats
+                if (normalized.contains("quantity") || normalized.contains("tag number") || normalized.equals("tagnumber") ||
+                    normalized.contains("final medium") || normalized.equals("finalmedium") || 
+                    normalized.contains("outside size") || normalized.equals("outsidesizewidth") || normalized.equals("outsidesizeheight")) {
+                    hasNamedColumns = true;
+                }
             }
 
             if (isNewFormat) {
                 detectNewFormat(headers);
+            } else if (hasNamedColumns) {
+                detectNamedColumnFormat(headers);
             } else {
                 detectOldFormat(headers);
             }
@@ -167,6 +178,42 @@ public class CsvParser implements ArtDataParser {
             widthIndex = 4;
             heightIndex = 5;
             glazingIndex = 6;
+        }
+
+        private void detectNamedColumnFormat(String[] headers) {
+            // Parse columns by header name, order-independent
+            quantityIndex = -1;
+            tagNumberIndex = -1;
+            finalMediumIndex = -1;
+            widthIndex = -1;
+            heightIndex = -1;
+            glazingIndex = -1;
+
+            for (int i = 0; i < headers.length; i++) {
+                String normalized = headers[i].trim().toLowerCase();
+                if (normalized.contains("quantity")) {
+                    quantityIndex = i;
+                } else if (normalized.contains("tag number") || normalized.equals("tagnumber")) {
+                    tagNumberIndex = i;
+                } else if (normalized.contains("final medium") || normalized.equals("finalmedium")) {
+                    finalMediumIndex = i;
+                } else if (normalized.contains("outside size width") || normalized.equals("outsidesizewidth")) {
+                    widthIndex = i;
+                } else if (normalized.contains("outside size height") || normalized.equals("outsidesizeheight")) {
+                    heightIndex = i;
+                } else if (normalized.contains("glazing")) {
+                    glazingIndex = i;
+                }
+            }
+
+            // Fallback to old format indices if any required column not found
+            if (quantityIndex < 0) quantityIndex = 1;
+            if (tagNumberIndex < 0) tagNumberIndex = 2;
+            if (finalMediumIndex < 0) finalMediumIndex = 3;
+            if (widthIndex < 0) widthIndex = 4;
+            if (heightIndex < 0) heightIndex = 5;
+            // Default glazing index for backward compatibility (data may have glazing at index 6 even without header)
+            if (glazingIndex < 0) glazingIndex = 6;
         }
 
         private void detectNewFormat(String[] headers) {
