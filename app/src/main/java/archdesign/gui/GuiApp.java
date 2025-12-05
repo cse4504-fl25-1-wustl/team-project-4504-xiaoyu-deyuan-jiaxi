@@ -272,18 +272,29 @@ public class GuiApp {
     }
 
     private void displayResults(ShipmentViewModel vm) {
-        // Summary Report
+        // Summary Report - matches CLI "Shipment Plan Summary"
         StringBuilder summary = new StringBuilder();
         summary.append("========================================\n");
-        summary.append("         PACKING ESTIMATE SUMMARY       \n");
+        summary.append("    SHIPMENT PLAN SUMMARY               \n");
         summary.append("========================================\n\n");
-        summary.append(String.format("Total Weight:      %.2f kg\n", vm.totalWeight()));
-        summary.append(String.format("Total Cost:        $%.2f\n", vm.totalCost()));
-        summary.append(String.format("Total Containers:  %d\n", vm.totalContainers()));
-        summary.append(String.format("Total Boxes:       %d\n", vm.totalBoxes()));
-        summary.append(String.format("Packed Containers: %d\n", vm.containers() != null ? vm.containers().size() : 0));
-        summary.append(String.format("Unpacked Items:    %d\n", vm.unpackedArts() != null ? vm.unpackedArts().size() : 0));
-        summary.append("\n========================================\n");
+        summary.append(String.format("Total Estimated Cost: $%.2f\n", vm.totalCost()));
+        summary.append(String.format("Total Weight: %.2f lbs\n", vm.totalWeight()));
+        summary.append(String.format("Total Containers: %d\n", vm.totalContainers()));
+        summary.append(String.format("Total Boxes: %d\n", vm.totalBoxes()));
+        summary.append("────────────────────────────────────\n\n");
+        
+        // Add quick work order counts to summary
+        java.util.List<ArtViewModel> allArts = new java.util.ArrayList<>();
+        for (ContainerViewModel container : vm.containers()) {
+            for (BoxViewModel box : container.boxes()) {
+                allArts.addAll(box.arts());
+            }
+        }
+        int customPieceCount = vm.unpackedArts() != null ? vm.unpackedArts().size() : 0;
+        summary.append(String.format("Total Artwork Pieces: %d\n", allArts.size() + customPieceCount));
+        summary.append(String.format("Packed Items: %d\n", allArts.size()));
+        summary.append(String.format("Unpacked Items: %d\n", customPieceCount));
+        summary.append("════════════════════════════════════\n");
         
         outputArea.setText(summary.toString());
 
@@ -310,14 +321,116 @@ public class GuiApp {
         report.append("========================================\n\n");
 
         report.append(String.format("Overall Statistics:\n"));
-        report.append(String.format("  Total Weight: %.2f kg\n", vm.totalWeight()));
+        report.append(String.format("  Total Weight: %.2f lbs\n", vm.totalWeight()));
         report.append(String.format("  Total Cost: $%.2f\n", vm.totalCost()));
         report.append(String.format("  Containers Used: %d\n", vm.totalContainers()));
         report.append(String.format("  Boxes Used: %d\n", vm.totalBoxes()));
         report.append("\n");
 
+        // Work Order Summary - matches CLI output
+        report.append("=== WORK ORDER SUMMARY ===\n\n");
+        
+        // Count piece types
+        java.util.List<ArtViewModel> allArts = new java.util.ArrayList<>();
+        java.util.Map<String, OversizeInfo> oversizeMap = new java.util.LinkedHashMap<>();
+        int standardPieces = 0;
+        double totalArtworkWeight = 0.0;
+        
+        for (ContainerViewModel container : vm.containers()) {
+            for (BoxViewModel box : container.boxes()) {
+                for (ArtViewModel art : box.arts()) {
+                    allArts.add(art);
+                    totalArtworkWeight += art.weight();
+                    boolean isOversized = art.width() > 44 || art.height() > 44;
+                    if (!isOversized) {
+                        standardPieces++;
+                    } else {
+                        String dims = String.format("%.1f\" x %.1f\"", art.height(), art.width());
+                        OversizeInfo info = oversizeMap.get(dims);
+                        if (info == null) {
+                            info = new OversizeInfo();
+                            oversizeMap.put(dims, info);
+                        }
+                        info.qty++;
+                        info.totalWeight += art.weight();
+                    }
+                }
+            }
+        }
+        
+        // Count box types
+        int standardBoxCount = 0;
+        int largeBoxCount = 0;
+        for (ContainerViewModel container : vm.containers()) {
+            for (BoxViewModel box : container.boxes()) {
+                if ("STANDARD".equals(box.type())) {
+                    standardBoxCount++;
+                } else if ("LARGE".equals(box.type())) {
+                    largeBoxCount++;
+                }
+            }
+        }
+        
+        // Count container types
+        int standardPalletCount = 0;
+        int oversizedPalletCount = 0;
+        int crateContainerCount = 0;
+        for (ContainerViewModel container : vm.containers()) {
+            String type = container.type();
+            if ("STANDARD_PALLET".equals(type) || "GLASS_PALLET".equals(type)) {
+                standardPalletCount++;
+            } else if ("OVERSIZE_PALLET".equals(type)) {
+                oversizedPalletCount++;
+            } else if ("STANDARD_CRATE".equals(type)) {
+                crateContainerCount++;
+            }
+        }
+        
+        int customPieceCount = vm.unpackedArts() != null ? vm.unpackedArts().size() : 0;
+        for (ArtViewModel art : vm.unpackedArts()) {
+            totalArtworkWeight += art.weight();
+        }
+        
+        double finalShipmentWeight = vm.totalWeight();
+        double totalPackagingWeight = finalShipmentWeight - totalArtworkWeight;
+        
+        // Display piece counts
+        report.append("ARTWORK PIECES:\n");
+        report.append(String.format("  Total Pieces: %d\n", allArts.size() + customPieceCount));
+        report.append(String.format("  Standard Size Pieces: %d\n", standardPieces));
+        report.append(String.format("  Oversized Pieces: %d\n", 
+            oversizeMap.values().stream().mapToInt(info -> info.qty).sum()));
+        
+        for (java.util.Map.Entry<String, OversizeInfo> entry : oversizeMap.entrySet()) {
+            OversizeInfo info = entry.getValue();
+            report.append(String.format("    - %s (Qty: %d, Weight: %.0f lbs)\n", 
+                entry.getKey(), info.qty, info.totalWeight));
+        }
+        report.append("\n");
+        
+        // Display packaging
+        report.append("PACKAGING:\n");
+        report.append(String.format("  Standard Box Count: %d\n", standardBoxCount));
+        report.append(String.format("  Large Box Count: %d\n", largeBoxCount));
+        report.append(String.format("  Custom Piece Count: %d\n", customPieceCount));
+        report.append("\n");
+        
+        // Display containers
+        report.append("CONTAINERS:\n");
+        report.append(String.format("  Standard Pallet Count: %d\n", standardPalletCount));
+        report.append(String.format("  Oversized Pallet Count: %d\n", oversizedPalletCount));
+        report.append(String.format("  Crate Container Count: %d\n", crateContainerCount));
+        report.append("\n");
+        
+        // Display weights
+        report.append("WEIGHT BREAKDOWN:\n");
+        report.append(String.format("  Total Artwork Weight: %.0f lbs\n", totalArtworkWeight));
+        report.append(String.format("  Total Packaging Weight: %.0f lbs\n", totalPackagingWeight));
+        report.append(String.format("  Final Shipment Weight: %.0f lbs\n", finalShipmentWeight));
+        report.append("\n");
+
         if (vm.containers() != null && !vm.containers().isEmpty()) {
-            report.append("Container Details:\n");
+            report.append("\nContainer Details:\n");
             report.append("------------------\n");
             for (int i = 0; i < vm.containers().size(); i++) {
                 ContainerViewModel container = vm.containers().get(i);
@@ -325,13 +438,13 @@ public class GuiApp {
                 report.append(String.format("  Type: %s\n", container.type()));
                 report.append(String.format("  Dimensions: %d x %d x %d\n", 
                     container.length(), container.width(), container.currentHeight()));
-                report.append(String.format("  Weight: %.2f kg\n", container.weight()));
+                report.append(String.format("  Weight: %.2f lbs\n", container.weight()));
                 report.append(String.format("  Number of Boxes: %d\n", 
                     container.boxes() != null ? container.boxes().size() : 0));
                 
                 if (container.boxes() != null) {
                     for (BoxViewModel box : container.boxes()) {
-                        report.append(String.format("    Box [%s] - Type: %s, Arts: %d, Weight: %.2f kg\n",
+                        report.append(String.format("    Box [%s] - Type: %s, Arts: %d, Weight: %.2f lbs\n",
                             box.id(), box.type(), 
                             box.arts() != null ? box.arts().size() : 0,
                             box.weight()));
@@ -346,6 +459,12 @@ public class GuiApp {
         }
 
         return report.toString();
+    }
+    
+    // Helper class for tracking oversize group info
+    private static class OversizeInfo {
+        int qty = 0;
+        double totalWeight = 0.0;
     }
 
     private String generateContainersReport(ShipmentViewModel vm) {
