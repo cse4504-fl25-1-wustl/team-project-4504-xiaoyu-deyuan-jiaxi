@@ -66,6 +66,33 @@ distribution:
 - `:app:fatJar` — runnable JAR whose manifest `Main-Class` is `archdesign.Main` (CLI)
 - `:app:fatJarGui` — runnable JAR whose manifest `Main-Class` is `archdesign.gui.GuiApp` (GUI)
 
+### GUI Features
+
+The Swing-based GUI provides a user-friendly interface with all features available in the CLI:
+
+**Core Features:**
+- CSV file selection with file browser
+- Drag and drop CSV input file support
+- Support for both old and new CSV formats (auto-detected)
+- Packing mode selection (Default, Box-Only, Crate-Only)
+- Real-time processing with status updates
+- **JSON and PDF export functionality** - Save results to JSON and PDF file
+
+**Report Views (Tabbed Interface):**
+1. **Summary Report** - Quick overview of key metrics (total weight, cost, containers)
+2. **Detailed Report** - Comprehensive breakdown including container and box details
+3. **Containers Breakdown** - Visual representation of how art is packed in each container
+4. **Unpacked Items** - List of any items that couldn't be packed with recommendations
+5. **Analytics & Statistics** - Packing performance metrics with visualizations and analysis
+
+**Enhanced User Experience:**
+- Status indicator showing processing state (Ready → Processing → Complete)
+- Error messages with clear text guidance (no icons)
+- File path display with browse functionality
+- Export button that appears after successful processing
+- Directory memory for file operations (remembers last used folder)
+- Clean, modern UI with improved visual design
+
 Why two fat jars? Double-click behavior on desktop platforms launches the JAR's
 manifest main class. To make a double-click open the GUI, use `fatJarGui`. If
 you want a desktop installer, use `jpackage` (manual) or configure the
