@@ -84,6 +84,8 @@ tasks.register<Jar>("fatJar") {
     from({
         configurations.runtimeClasspath.get().filter { it.name.endsWith(".jar") }.map { zipTree(it) }
     })
+    // Exclude signature files to prevent "Invalid signature file digest" errors
+    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
     manifest {
         attributes["Main-Class"] = "archdesign.Main"
     }
@@ -100,6 +102,8 @@ tasks.register<Jar>("fatJarGui") {
     from({
         configurations.runtimeClasspath.get().filter { it.name.endsWith(".jar") }.map { zipTree(it) }
     })
+    // Exclude signature files to prevent "Invalid signature file digest" errors
+    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
     manifest {
         attributes["Main-Class"] = "archdesign.gui.GuiApp"
     }
