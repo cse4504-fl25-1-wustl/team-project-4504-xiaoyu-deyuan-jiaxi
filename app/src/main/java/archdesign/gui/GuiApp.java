@@ -1,6 +1,7 @@
 package archdesign.gui;
 
 import archdesign.Main;
+import archdesign.output.JsonOutputWriter;
 import archdesign.response.ShipmentViewModel;
 import archdesign.response.ContainerViewModel;
 import archdesign.response.BoxViewModel;
@@ -18,6 +19,7 @@ import java.io.File;
  * - CSV file upload
  * - Packing mode selection (box-only, crate-only, or both)
  * - Submit button for processing
+ * - JSON export functionality
  * - Status indicator (pending, processing, complete)
  * - Error reporting
  * - Multiple report views (Summary, Detailed, Containers, Unpacked)
@@ -28,17 +30,21 @@ public class GuiApp {
     private JLabel fileLabel;
     private JButton chooseBtn;
     private JButton submitBtn;
+    private JButton exportBtn;
     private JComboBox<String> packingModeCombo;
     private JLabel statusLabel;
     private JTextArea outputArea;
     private JTabbedPane reportTabs;
     private ShipmentViewModel currentViewModel;
+    private String lastSelectedDirectory;
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new GuiApp().createAndShowGui());
     }
 
     private void createAndShowGui() {
+        lastSelectedDirectory = System.getProperty("user.home");
+        
         frame = new JFrame("Art Packer - Shipping Estimate System");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(900, 650);
@@ -166,6 +172,18 @@ public class GuiApp {
         submitBtn.addActionListener(e -> handleSubmit());
         panel.add(submitBtn, gbc);
 
+        // Export Button (initially disabled)
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 3;
+        gbc.anchor = GridBagConstraints.CENTER;
+        exportBtn = new JButton("Export Results to JSON");
+        exportBtn.setEnabled(false);
+        exportBtn.setFont(new Font("Arial", Font.BOLD, 12));
+        exportBtn.setPreferredSize(new Dimension(200, 35));
+        exportBtn.addActionListener(e -> handleJsonExport());
+        panel.add(exportBtn, gbc);
+
         return panel;
     }
 
@@ -280,6 +298,9 @@ public class GuiApp {
         // Unpacked Items
         JTextArea unpackedArea = (JTextArea) ((JScrollPane) reportTabs.getComponentAt(3)).getViewport().getView();
         unpackedArea.setText(generateUnpackedReport(vm));
+
+        // Enable export button
+        exportBtn.setEnabled(true);
     }
 
     private String generateDetailedReport(ShipmentViewModel vm) {
@@ -412,6 +433,40 @@ public class GuiApp {
         report.append("• These items may require custom shipping\n");
 
         return report.toString();
+    }
+
+    private void handleJsonExport() {
+        if (currentViewModel == null) {
+            showError("No results available to export. Please process a CSV file first.");
+            return;
+        }
+
+        JFileChooser chooser = new JFileChooser(lastSelectedDirectory);
+        chooser.setDialogTitle("Save Packing Results as JSON");
+        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("JSON Files", "json"));
+        chooser.setSelectedFile(new File("packing_results.json"));
+
+        int result = chooser.showSaveDialog(frame);
+        
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File file = chooser.getSelectedFile();
+            lastSelectedDirectory = file.getParent();
+            
+            try {
+                JsonOutputWriter jsonWriter = new JsonOutputWriter();
+                jsonWriter.write(currentViewModel, file.getAbsolutePath());
+                
+                JOptionPane.showMessageDialog(frame,
+                    "Results successfully exported to:\n" + file.getAbsolutePath(),
+                    "Export Successful",
+                    JOptionPane.INFORMATION_MESSAGE);
+                
+                updateStatus("Export completed successfully", new Color(0, 150, 0));
+            } catch (Exception ex) {
+                showError("Failed to export JSON: " + ex.getMessage());
+                updateStatus("Export failed", Color.RED);
+            }
+        }
     }
 
     private void showError(String message) {
