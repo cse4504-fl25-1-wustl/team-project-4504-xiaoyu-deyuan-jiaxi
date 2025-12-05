@@ -86,13 +86,20 @@ public class Main {
         // --- "IN" PART ---
         ArtImporter importer = new ArtImporter(new CsvParser());
         List<Art> artsToPack = importer.importFromFile(filePath);
-        System.out.println("Successfully imported " + artsToPack.size() + " total art items.");
+        
+        // Only log import results in CLI mode (when System.console() is available)
+        if (System.console() != null) {
+            System.out.println("Successfully imported " + artsToPack.size() + " total art items.");
+        }
 
         // --- "CORE" PART ---
         UserConstraints constraints = buildConstraints(packingMode);
 
         ShippingProvider provider = ShippingProvider.PLACEHOLDER;
-        System.out.println("\n--- Running Packer Algorithm... ---");
+        
+        if (System.console() != null) {
+            System.out.println("\n--- Running Packer Algorithm... ---");
+        }
 
         // Normal flow: use the constraints based on packing mode
         PackingPlan finalPlan = Packer.pack(artsToPack, constraints, provider);

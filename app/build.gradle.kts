@@ -35,6 +35,13 @@ dependencies {
     // Google OR-Tools for constraint programming and optimization
     implementation("com.google.ortools:ortools-java:9.8.3296")
     
+    // iText for PDF generation
+    implementation("com.itextpdf:itext7-core:7.2.5")
+    
+    // SLF4J API and Simple binding to prevent "StaticLoggerBinder not found" warnings
+    implementation("org.slf4j:slf4j-api:2.0.9")
+    implementation("org.slf4j:slf4j-simple:2.0.9")
+    
     // This dependency is used by the application.
     implementation(libs.guava)
 
