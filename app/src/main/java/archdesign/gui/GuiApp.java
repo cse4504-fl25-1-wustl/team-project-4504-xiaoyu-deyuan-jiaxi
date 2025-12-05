@@ -18,6 +18,35 @@ import java.awt.dnd.DropTargetDropEvent;
 import java.io.File;
 
 /**
+ * Custom rounded border for modern UI
+ */
+class RoundedBorder extends javax.swing.border.AbstractBorder {
+    private int radius;
+    private Color color;
+    private int thickness;
+    
+    public RoundedBorder(int radius, Color color, int thickness) {
+        this.radius = radius;
+        this.color = color;
+        this.thickness = thickness;
+    }
+    
+    @Override
+    public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setColor(color);
+        g2.setStroke(new BasicStroke(thickness));
+        g2.drawRoundRect(x, y, width - 1, height - 1, radius, radius);
+    }
+    
+    @Override
+    public Insets getBorderInsets(Component c) {
+        return new Insets(thickness + 5, thickness + 5, thickness + 5, thickness + 5);
+    }
+}
+
+/**
  * Enhanced Swing GUI for the Packer application.
  * Features include:
  * - CSV file upload
@@ -52,61 +81,110 @@ public class GuiApp {
         
         frame = new JFrame("Art Packer - Shipping Estimate System");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(900, 650);
+        frame.setSize(1000, 750);
+        
+        // Simple white and black theme
+        Color darkBg = new Color(245, 245, 245);        // White background
+        Color cardBg = new Color(245, 245, 245);        // White
+        Color primaryBlue = Color.BLACK;                // Black for borders
+        Color accentGreen = Color.BLACK;                // Black
+        Color textWhite = Color.BLACK;
+        
+        // Set UI defaults for black text on all components
+        UIManager.put("TabbedPane.foreground", Color.BLACK);
+        UIManager.put("TabbedPane.background", cardBg);
+        UIManager.put("Button.foreground", Color.BLACK);
+        UIManager.put("Label.foreground", Color.BLACK);
+        
+        // Set dark theme
+        frame.getContentPane().setBackground(darkBg);
 
-        // Main container
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        // Main container with modern padding
+        JPanel mainPanel = new JPanel(new BorderLayout(15, 15));
+        mainPanel.setBackground(darkBg);
+        mainPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
 
         // Top panel: Input controls
         JPanel inputPanel = createInputPanel();
         mainPanel.add(inputPanel, BorderLayout.NORTH);
 
         // Center panel: Status and Reports
-        JPanel centerPanel = new JPanel(new BorderLayout(10, 10));
+        JPanel centerPanel = new JPanel(new BorderLayout(15, 15));
+        centerPanel.setBackground(darkBg);
         
-        // Status indicator
+        // Status indicator with modern styling
         statusLabel = new JLabel("Status: Ready - Please select a file and submit");
-        statusLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        statusLabel.setForeground(new Color(0, 100, 0));
-        statusLabel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.LIGHT_GRAY),
-            new EmptyBorder(5, 10, 5, 10)
+        statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        statusLabel.setForeground(textWhite);
+        statusLabel.setBackground(cardBg);
+        statusLabel.setOpaque(true);
+        statusLabel.setBorder(new javax.swing.border.CompoundBorder(
+            BorderFactory.createLineBorder(Color.BLACK, 1),
+            new EmptyBorder(10, 15, 10, 15)
         ));
         centerPanel.add(statusLabel, BorderLayout.NORTH);
 
-        // Report tabs
+        // Report tabs with custom styling
         reportTabs = new JTabbedPane();
         reportTabs.setEnabled(false);
+        reportTabs.setBackground(cardBg);
+        reportTabs.setForeground(Color.BLACK);
+        reportTabs.setBorder(null);
         
+        // Summary Report
         outputArea = new JTextArea();
         outputArea.setEditable(false);
-        outputArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        outputArea.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        outputArea.setBackground(cardBg);
+        outputArea.setForeground(Color.BLACK);
+        outputArea.setCaretColor(primaryBlue);
+        outputArea.setMargin(new Insets(10, 10, 10, 10));
         JScrollPane summaryScroll = new JScrollPane(outputArea);
+        summaryScroll.getViewport().setBackground(cardBg);
         reportTabs.addTab("Summary Report", summaryScroll);
         
+        // Detailed Report
         JTextArea detailedArea = new JTextArea();
         detailedArea.setEditable(false);
         detailedArea.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        detailedArea.setBackground(cardBg);
+        detailedArea.setForeground(Color.BLACK);
+        detailedArea.setMargin(new Insets(10, 10, 10, 10));
         JScrollPane detailedScroll = new JScrollPane(detailedArea);
+        detailedScroll.getViewport().setBackground(cardBg);
         reportTabs.addTab("Detailed Report", detailedScroll);
         
+        // Containers Breakdown
         JTextArea containersArea = new JTextArea();
         containersArea.setEditable(false);
         containersArea.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        containersArea.setBackground(cardBg);
+        containersArea.setForeground(Color.BLACK);
+        containersArea.setMargin(new Insets(10, 10, 10, 10));
         JScrollPane containersScroll = new JScrollPane(containersArea);
+        containersScroll.getViewport().setBackground(cardBg);
         reportTabs.addTab("Containers Breakdown", containersScroll);
         
+        // Unpacked Items
         JTextArea unpackedArea = new JTextArea();
         unpackedArea.setEditable(false);
         unpackedArea.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        unpackedArea.setBackground(cardBg);
+        unpackedArea.setForeground(Color.BLACK);
+        unpackedArea.setMargin(new Insets(10, 10, 10, 10));
         JScrollPane unpackedScroll = new JScrollPane(unpackedArea);
+        unpackedScroll.getViewport().setBackground(cardBg);
         reportTabs.addTab("Unpacked Items", unpackedScroll);
         
+        // Analytics & Statistics
         JTextArea analyticsArea = new JTextArea();
         analyticsArea.setEditable(false);
         analyticsArea.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        analyticsArea.setBackground(cardBg);
+        analyticsArea.setForeground(Color.BLACK);
+        analyticsArea.setMargin(new Insets(10, 10, 10, 10));
         JScrollPane analyticsScroll = new JScrollPane(analyticsArea);
+        analyticsScroll.getViewport().setBackground(cardBg);
         reportTabs.addTab("Analytics & Statistics", analyticsScroll);
 
         centerPanel.add(reportTabs, BorderLayout.CENTER);
@@ -118,17 +196,22 @@ public class GuiApp {
     }
 
     private JPanel createInputPanel() {
+        // Simple white and black theme
+        Color darkBg = new Color(245, 245, 245);        // White background
+        Color cardBg = new Color(245, 245, 245);        // White
+        Color primaryBlue = Color.BLACK;                // Black for borders
+        Color accentGreen = Color.BLACK;                // Black
+        Color textWhite = Color.BLACK;
+        
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(Color.GRAY),
-            "Input Configuration",
-            TitledBorder.LEFT,
-            TitledBorder.TOP,
-            new Font("Arial", Font.BOLD, 12)
+        panel.setBackground(cardBg);
+        panel.setBorder(new javax.swing.border.CompoundBorder(
+            BorderFactory.createLineBorder(Color.BLACK, 1),
+            new EmptyBorder(15, 15, 15, 15)
         ));
         
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // CSV File Selection
@@ -136,29 +219,31 @@ public class GuiApp {
         gbc.gridy = 0;
         gbc.weightx = 0;
         JLabel csvLabel = new JLabel("CSV File:");
+        csvLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        csvLabel.setForeground(textWhite);
         panel.add(csvLabel, gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1.0;
-        fileLabel = new JLabel("<html><div style='text-align:center;'><b>↓ Drag & Drop CSV Here ↓</b><br/><small>or click Browse</small><br/><small style='color: #888;'>No file selected</small></div></html>");
-        fileLabel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(100, 150, 255), 2),
-            new EmptyBorder(10, 10, 10, 10)
+        fileLabel = new JLabel("<html><div style='text-align:center;'><b style='font-size:14px;'>Drag & Drop CSV Here</b><br/><small>or click Browse</small><br/><small style='color: #333;'>No file selected</small></div></html>");
+        fileLabel.setBorder(new javax.swing.border.CompoundBorder(
+            BorderFactory.createLineBorder(Color.BLACK, 2),
+            new EmptyBorder(15, 15, 15, 15)
         ));
-        fileLabel.setBackground(new Color(230, 240, 255));
+        fileLabel.setBackground(new Color(245, 245, 245));
         fileLabel.setOpaque(true);
         fileLabel.setHorizontalAlignment(SwingConstants.CENTER);
         fileLabel.setVerticalAlignment(SwingConstants.CENTER);
-        fileLabel.setPreferredSize(new Dimension(250, 70));
+        fileLabel.setPreferredSize(new Dimension(300, 80));
         fileLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        fileLabel.setForeground(new Color(50, 100, 200));
+        fileLabel.setForeground(textWhite);
         
         // Enable drag and drop
-        new DropTarget(fileLabel, new java.awt.dnd.DropTargetAdapter() {
+        DropTarget dropTarget = new DropTarget(fileLabel, new DropTargetAdapter() {
             @Override
-            public void drop(java.awt.dnd.DropTargetDropEvent e) {
+            public void drop(DropTargetDropEvent e) {
                 try {
-                    e.acceptDrop(java.awt.dnd.DnDConstants.ACTION_COPY);
+                    e.acceptDrop(DnDConstants.ACTION_COPY);
                     java.util.List<?> droppedFiles = (java.util.List<?>) e.getTransferable()
                         .getTransferData(java.awt.datatransfer.DataFlavor.javaFileListFlavor);
                     
@@ -185,11 +270,11 @@ public class GuiApp {
                             return;
                         }
                         
-                        fileLabel.setText("<html><div style='text-align:center;'><font color='green'><b>✓ File Loaded</b></font><br/>" + droppedFile.getName() + "</div></html>");
+                        fileLabel.setText("<html><div style='text-align:center;'><font color='#64DC78'><b style='font-size:14px;'>[OK] File Loaded</b></font><br/>" + droppedFile.getName() + "</div></html>");
                         selectedFilePath = droppedFile.getAbsolutePath();
                         lastSelectedDirectory = droppedFile.getParent();
                         submitBtn.setEnabled(true);
-                        updateStatus("Ready - Click 'Submit for Estimate' to process", new Color(0, 100, 0));
+                        updateStatus("Ready - Click 'Submit for Estimate' to process", accentGreen);
                         
                         try {
                             showFilePreview(droppedFile);
@@ -209,6 +294,12 @@ public class GuiApp {
         gbc.gridx = 2;
         gbc.weightx = 0;
         chooseBtn = new JButton("Browse...");
+        chooseBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        chooseBtn.setBackground(primaryBlue);
+        chooseBtn.setForeground(Color.WHITE);
+        chooseBtn.setFocusPainted(false);
+        chooseBtn.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
+        chooseBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         chooseBtn.setToolTipText("Select a CSV file with artwork details (supports both old and new formats)");
         chooseBtn.addActionListener(e -> handleFileSelection());
         panel.add(chooseBtn, gbc);
@@ -217,6 +308,8 @@ public class GuiApp {
         gbc.gridx = 0;
         gbc.gridy = 1;
         JLabel modeLabel = new JLabel("Packing Mode:");
+        modeLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        modeLabel.setForeground(textWhite);
         panel.add(modeLabel, gbc);
 
         gbc.gridx = 1;
@@ -226,6 +319,9 @@ public class GuiApp {
             "Box Only (No Crates)",
             "Crate Only (No Boxes)"
         });
+        packingModeCombo.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        packingModeCombo.setBackground(cardBg);
+        packingModeCombo.setForeground(textWhite);
         packingModeCombo.setToolTipText(
             "Default: Use both boxes and crates for optimal packing\n" +
             "Box Only: Use only boxes, no crates\n" +
@@ -239,22 +335,32 @@ public class GuiApp {
         gbc.anchor = GridBagConstraints.CENTER;
         submitBtn = new JButton("Submit for Estimate");
         submitBtn.setEnabled(false);
-        submitBtn.setFont(new Font("Arial", Font.BOLD, 14));
-        submitBtn.setPreferredSize(new Dimension(200, 35));
+        submitBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        submitBtn.setPreferredSize(new Dimension(220, 40));
+        submitBtn.setBackground(accentGreen);
+        submitBtn.setForeground(Color.WHITE);
+        submitBtn.setFocusPainted(false);
+        submitBtn.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        submitBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         submitBtn.setToolTipText("Process the selected CSV file and calculate packing estimates");
         submitBtn.addActionListener(e -> handleSubmit());
         panel.add(submitBtn, gbc);
 
-        // Export Button (initially disabled)
+        // Export Button
         gbc.gridx = 0;
         gbc.gridy = 3;
         gbc.gridwidth = 3;
         gbc.anchor = GridBagConstraints.CENTER;
-        exportBtn = new JButton("Export Results");
+        exportBtn = new JButton("Export Results (JSON/PDF)");
         exportBtn.setEnabled(false);
-        exportBtn.setFont(new Font("Arial", Font.BOLD, 12));
-        exportBtn.setPreferredSize(new Dimension(200, 35));
-        exportBtn.setToolTipText("Save the packing results to a JSON file for further analysis");
+        exportBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        exportBtn.setPreferredSize(new Dimension(220, 35));
+        exportBtn.setBackground(primaryBlue);
+        exportBtn.setForeground(Color.WHITE);
+        exportBtn.setFocusPainted(false);
+        exportBtn.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
+        exportBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        exportBtn.setToolTipText("Save the packing results to JSON or PDF format");
         exportBtn.addActionListener(e -> handleJsonExport());
         panel.add(exportBtn, gbc);
 
@@ -303,7 +409,7 @@ public class GuiApp {
         try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(file))) {
             StringBuilder preview = new StringBuilder();
             preview.append("File: ").append(file.getName()).append(" (").append(file.length()).append(" bytes)\n");
-            preview.append("─────────────────────────────────────\n");
+            preview.append("-------------------------------------\n");
             
             String line;
             int lineCount = 0;
@@ -313,7 +419,7 @@ public class GuiApp {
             }
             
             if (lineCount > 0) {
-                preview.append("─────────────────────────────────────\n");
+                preview.append("-------------------------------------\n");
                 System.out.println(preview.toString()); // Show in console for debugging
             }
         } catch (Exception e) {
@@ -412,7 +518,7 @@ public class GuiApp {
         summary.append(String.format("Total Weight: %.2f lbs\n", vm.totalWeight()));
         summary.append(String.format("Total Containers: %d\n", vm.totalContainers()));
         summary.append(String.format("Total Boxes: %d\n", vm.totalBoxes()));
-        summary.append("────────────────────────────────────\n\n");
+        summary.append("----------------------------------------\n\n");
         
         // Add quick work order counts to summary
         java.util.List<ArtViewModel> allArts = new java.util.ArrayList<>();
@@ -425,7 +531,7 @@ public class GuiApp {
         summary.append(String.format("Total Artwork Pieces: %d\n", allArts.size() + customPieceCount));
         summary.append(String.format("Packed Items: %d\n", allArts.size()));
         summary.append(String.format("Unpacked Items: %d\n", customPieceCount));
-        summary.append("════════════════════════════════════\n");
+        summary.append("========================================\n");
         
         outputArea.setText(summary.toString());
 
@@ -463,9 +569,9 @@ public class GuiApp {
         report.append("\n");
 
         // Work Order Summary - matches CLI output with detailed formatting
-        report.append("═════════════════════════════════════════\n");
+        report.append("=========================================\n");
         report.append("    WORK ORDER SUMMARY\n");
-        report.append("═════════════════════════════════════════\n\n");
+        report.append("=========================================\n\n");
         
         // Count piece types
         java.util.List<ArtViewModel> allArts = new java.util.ArrayList<>();
@@ -559,7 +665,7 @@ public class GuiApp {
         report.append("\n");
         
         // Additional breakdown details
-        report.append("─────────────────────────────────────\n");
+        report.append("----------------------------------------\n");
         report.append("PACKAGING BREAKDOWN:\n");
         report.append(String.format("  Standard Boxes: %d\n", standardBoxCount));
         report.append(String.format("  Large Boxes: %d\n", largeBoxCount));
@@ -570,7 +676,7 @@ public class GuiApp {
         report.append(String.format("  Standard Pallets: %d\n", standardPalletCount));
         report.append(String.format("  Oversized Pallets: %d\n", oversizedPalletCount));
         report.append(String.format("  Crates: %d\n", crateContainerCount));
-        report.append("─────────────────────────────────────\n\n");
+        report.append("----------------------------------------\n\n");
 
         if (vm.containers() != null && !vm.containers().isEmpty()) {
             report.append("\nContainer Details:\n");
@@ -623,9 +729,9 @@ public class GuiApp {
 
         for (int i = 0; i < vm.containers().size(); i++) {
             ContainerViewModel container = vm.containers().get(i);
-            report.append(String.format("═══════════════════════════════════════\n"));
+            report.append(String.format("=========================================\n"));
             report.append(String.format("CONTAINER #%d\n", i + 1));
-            report.append(String.format("═══════════════════════════════════════\n"));
+            report.append(String.format("=========================================\n"));
             report.append(String.format("ID: %s\n", container.id()));
             report.append(String.format("Type: %s\n", container.type()));
             report.append(String.format("Dimensions (L×W×H): %d × %d × %d cm\n", 
@@ -636,7 +742,7 @@ public class GuiApp {
 
             if (container.boxes() != null && !container.boxes().isEmpty()) {
                 report.append("Boxes in this container:\n");
-                report.append("───────────────────────────────────────\n");
+                report.append("-------------------------------------------\n");
                 
                 for (int j = 0; j < container.boxes().size(); j++) {
                     BoxViewModel box = container.boxes().get(j);
@@ -651,7 +757,7 @@ public class GuiApp {
                     if (box.arts() != null && !box.arts().isEmpty()) {
                         report.append("    Art pieces:\n");
                         for (ArtViewModel art : box.arts()) {
-                            report.append(String.format("      • %s (%.1f × %.1f cm, %.2f kg, %s)\n",
+                            report.append(String.format("      * %s (%.1f × %.1f cm, %.2f kg, %s)\n",
                                 art.id(), art.width(), art.height(), art.weight(), art.material()));
                         }
                     }
@@ -670,15 +776,15 @@ public class GuiApp {
         report.append("========================================\n\n");
 
         if (vm.unpackedArts() == null || vm.unpackedArts().isEmpty()) {
-            report.append("✓ All items were successfully packed!\n");
+            report.append("[OK] All items were successfully packed!\n");
             report.append("\nNo unpacked items to report.\n");
             return report.toString();
         }
 
-        report.append(String.format("⚠ WARNING: %d items could not be packed\n\n", vm.unpackedArts().size()));
+        report.append(String.format("[WARN] WARNING: %d items could not be packed\n\n", vm.unpackedArts().size()));
         report.append("The following art pieces could not fit into any available\n");
         report.append("container configuration:\n\n");
-        report.append("───────────────────────────────────────\n");
+        report.append("-------------------------------------------\n");
 
         for (int i = 0; i < vm.unpackedArts().size(); i++) {
             ArtViewModel art = vm.unpackedArts().get(i);
@@ -688,11 +794,11 @@ public class GuiApp {
             report.append(String.format("   Material: %s\n", art.material()));
         }
 
-        report.append("\n───────────────────────────────────────\n");
+        report.append("\n-------------------------------------------\n");
         report.append("\nRecommendations:\n");
-        report.append("• Consider using larger containers\n");
-        report.append("• Try different packing modes\n");
-        report.append("• These items may require custom shipping\n");
+        report.append("* Consider using larger containers\n");
+        report.append("* Try different packing modes\n");
+        report.append("* These items may require custom shipping\n");
 
         return report.toString();
     }
@@ -702,9 +808,9 @@ public class GuiApp {
         StringBuilder bar = new StringBuilder();
         for (int i = 0; i < width; i++) {
             if (i < filled) {
-                bar.append("█");
+                bar.append("#");
             } else {
-                bar.append("░");
+                bar.append("-");
             }
         }
         return bar.toString();
@@ -712,9 +818,9 @@ public class GuiApp {
 
     private String generateAnalyticsReport(ShipmentViewModel vm) {
         StringBuilder report = new StringBuilder();
-        report.append("╔════════════════════════════════════════════════════════╗\n");
-        report.append("║      PACKING ANALYTICS & STATISTICS REPORT             ║\n");
-        report.append("╚════════════════════════════════════════════════════════╝\n\n");
+        report.append("========================================\n");
+        report.append("  PACKING ANALYTICS & STATISTICS REPORT \n");
+        report.append("========================================\n\n");
 
         // Collect data
         java.util.List<ArtViewModel> allArts = new java.util.ArrayList<>();
@@ -793,7 +899,7 @@ public class GuiApp {
         report.append("│\n");
         
         // Create visual pie chart for container types
-        int maxTypeLength = containerTypeCount.keySet().stream()
+        containerTypeCount.keySet().stream()
             .mapToInt(String::length)
             .max()
             .orElse(15);
@@ -941,7 +1047,7 @@ public class GuiApp {
             "Choose export format:",
             "Export Results",
             JOptionPane.YES_NO_CANCEL_OPTION,
-            JOptionPane.QUESTION_MESSAGE,
+            JOptionPane.PLAIN_MESSAGE,
             null,
             options,
             options[0]);
