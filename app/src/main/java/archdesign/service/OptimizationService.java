@@ -142,16 +142,27 @@ public class OptimizationService {
                 model.addGreaterOrEqual(totalCapExpr, totalBoxes);
             }
 
-            // Step 6: set objective - minimize total container weight
+            // Step 6: set objective - minimize total cost using the cost strategy
+            // This allows the optimizer to work with different pricing models:
+            // - Linear pricing (PlaceholderCostStrategy): minimizes weight since cost ∝ weight
+            // - Tiered pricing (future): will minimize actual cost considering price brackets
             LinearExprBuilder objectiveExpr = LinearExpr.newBuilder();
+            
+            // Calculate average content weight per container for cost estimation
+            double totalArtWeight = artRequirements.stream()
+                .mapToDouble(req -> req.art.getWeight())
+                .sum();
+            int estimatedContainerCount = Math.max(1, totalBoxes / 4); // Rough estimate: ~4 boxes per container
+            double averageContentWeight = totalArtWeight / estimatedContainerCount;
             
             for (Map.Entry<ContainerType, IntVar> entry : containerVars.entrySet()) {
                 ContainerType containerType = entry.getKey();
                 IntVar var = entry.getValue();
                 
-                // Objective = container weight * 100 + 1 (small penalty for count)
-                // Multiply by 100 to keep integer arithmetic while maintaining precision
-                long coefficient = (long)(containerType.getWeight() * 100) + 1;
+                // Use cost strategy to get the coefficient for optimization
+                // For PlaceholderCostStrategy: this equals (weight * 10 * 100) + 1, same behavior as before
+                // For TieredCostStrategy: this will reflect the marginal cost of adding a container
+                long coefficient = costStrategy.getCostCoefficient(containerType, averageContentWeight);
                 objectiveExpr.addTerm(var, coefficient);
             }
             
