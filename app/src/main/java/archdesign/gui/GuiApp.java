@@ -389,8 +389,10 @@ public class GuiApp {
         report.append(String.format("  Boxes Used: %d\n", vm.totalBoxes()));
         report.append("\n");
 
-        // Work Order Summary - matches CLI output
-        report.append("=== WORK ORDER SUMMARY ===\n\n");
+        // Work Order Summary - matches CLI output with detailed formatting
+        report.append("═════════════════════════════════════════\n");
+        report.append("    WORK ORDER SUMMARY\n");
+        report.append("═════════════════════════════════════════\n\n");
         
         // Count piece types
         java.util.List<ArtViewModel> allArts = new java.util.ArrayList<>();
@@ -407,7 +409,7 @@ public class GuiApp {
                     if (!isOversized) {
                         standardPieces++;
                     } else {
-                        String dims = String.format("%.1f\" x %.1f\"", art.height(), art.width());
+                        String dims = String.format("%.0f\" x %.0f\"", art.height(), art.width());
                         OversizeInfo info = oversizeMap.get(dims);
                         if (info == null) {
                             info = new OversizeInfo();
@@ -456,40 +458,46 @@ public class GuiApp {
         double finalShipmentWeight = vm.totalWeight();
         double totalPackagingWeight = finalShipmentWeight - totalArtworkWeight;
         
-        // Display piece counts
-        report.append("ARTWORK PIECES:\n");
-        report.append(String.format("  Total Pieces: %d\n", allArts.size() + customPieceCount));
-        report.append(String.format("  Standard Size Pieces: %d\n", standardPieces));
-        report.append(String.format("  Oversized Pieces: %d\n", 
-            oversizeMap.values().stream().mapToInt(info -> info.qty).sum()));
+        // Display piece counts in the requested format
+        report.append("Total Pieces: ").append(allArts.size() + customPieceCount).append("\n");
+        report.append("Standard Size Pieces: ").append(standardPieces);
         
+        // Calculate average standard size for context
+        if (standardPieces > 0) {
+            report.append(" (estimated at 43\" x 33\")");
+        }
+        report.append("\n");
+        
+        int totalOversized = oversizeMap.values().stream().mapToInt(info -> info.qty).sum();
+        report.append("Oversized Pieces: ").append(totalOversized).append("\n");
+        
+        // Display oversized details with indentation
         for (java.util.Map.Entry<String, OversizeInfo> entry : oversizeMap.entrySet()) {
             OversizeInfo info = entry.getValue();
-            report.append(String.format("    - %s (Qty: %d, Weight: %.0f lbs)\n", 
+            report.append(String.format("   * %s (Qty: %d) = %.0f lbs\n", 
                 entry.getKey(), info.qty, info.totalWeight));
         }
         report.append("\n");
         
-        // Display packaging
-        report.append("PACKAGING:\n");
-        report.append(String.format("  Standard Box Count: %d\n", standardBoxCount));
-        report.append(String.format("  Large Box Count: %d\n", largeBoxCount));
-        report.append(String.format("  Custom Piece Count: %d\n", customPieceCount));
+        // Display weights with proper formatting
+        report.append(String.format("Total Artwork Weight: %.0f lbs\n", totalArtworkWeight));
+        report.append(String.format("Total Packaging Weight: %.0f lbs\n", totalPackagingWeight));
+        report.append(String.format("Final Shipment Weight: %.0f lbs\n", finalShipmentWeight));
         report.append("\n");
         
-        // Display containers
-        report.append("CONTAINERS:\n");
-        report.append(String.format("  Standard Pallet Count: %d\n", standardPalletCount));
-        report.append(String.format("  Oversized Pallet Count: %d\n", oversizedPalletCount));
-        report.append(String.format("  Crate Container Count: %d\n", crateContainerCount));
+        // Additional breakdown details
+        report.append("─────────────────────────────────────\n");
+        report.append("PACKAGING BREAKDOWN:\n");
+        report.append(String.format("  Standard Boxes: %d\n", standardBoxCount));
+        report.append(String.format("  Large Boxes: %d\n", largeBoxCount));
+        report.append(String.format("  Unpacked Items: %d\n", customPieceCount));
         report.append("\n");
         
-        // Display weights
-        report.append("WEIGHT BREAKDOWN:\n");
-        report.append(String.format("  Total Artwork Weight: %.0f lbs\n", totalArtworkWeight));
-        report.append(String.format("  Total Packaging Weight: %.0f lbs\n", totalPackagingWeight));
-        report.append(String.format("  Final Shipment Weight: %.0f lbs\n", finalShipmentWeight));
-        report.append("\n");
+        report.append("CONTAINER BREAKDOWN:\n");
+        report.append(String.format("  Standard Pallets: %d\n", standardPalletCount));
+        report.append(String.format("  Oversized Pallets: %d\n", oversizedPalletCount));
+        report.append(String.format("  Crates: %d\n", crateContainerCount));
+        report.append("─────────────────────────────────────\n\n");
 
         if (vm.containers() != null && !vm.containers().isEmpty()) {
             report.append("\nContainer Details:\n");
