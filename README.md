@@ -83,7 +83,7 @@ The Swing-based GUI provides a user-friendly interface with all features availab
 2. **Detailed Report** - Comprehensive breakdown including container and box details
 3. **Containers Breakdown** - Visual representation of how art is packed in each container
 4. **Unpacked Items** - List of any items that couldn't be packed with recommendations
-5. **Analytics & Statistics** - Packing performance metrics with visualizations and analysis
+
 
 **Enhanced User Experience:**
 - Status indicator showing processing state (Ready → Processing → Complete)
